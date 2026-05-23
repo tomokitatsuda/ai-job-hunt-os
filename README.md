@@ -1,36 +1,100 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# AI Job Hunt OS
 
-## Getting Started
+AI Job Hunt OS は、就職活動の応募状況、選考予定、タスク、振り返りを一元管理するための Web アプリです。
 
-First, run the development server:
+現在は実装前の設計整理フェーズです。まずは README と設計ドキュメントで、作るものの範囲と開発方針を明確にしています。
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## 概要
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+就職活動では、応募先ごとの選考ステータス、面接日程、提出書類、次にやることが複数のツールに分散しがちです。
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+AI Job Hunt OS では、就活に必要な情報を一つの画面で管理し、後から AI を活用して自己分析や応募書類の改善にもつなげられる状態を目指します。
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 制作背景
 
-## Learn More
+このプロジェクトは、単なる CRUD アプリではなく、「課題を整理し、MVP を決め、段階的に実装するプロセス」を見せるために作成しています。
 
-To learn more about Next.js, take a look at the following resources:
+就活では、情報量が増えるほど管理が難しくなります。そこで、まずは応募管理の基本機能に絞り、あとから認証、データベース、AI 機能を追加できるように設計します。
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 現在の開発ステータス
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- Next.js アプリの初期構成を作成済み
+- README と設計ドキュメントを整備中
+- アプリ固有の UI、DB、認証、AI 機能は未実装
+- 実装前に MVP の範囲と優先順位を整理している段階
 
-## Deploy on Vercel
+## MVP で作る機能
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+v1.0 MVP では、まずモックデータで画面と情報設計を固め、その後 DB 保存と CRUD に進みながら、以下の機能を実装予定です。
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- 応募先企業の管理
+- 応募先ごとの選考ステータス管理
+- 面接日程や締切の管理
+- 次にやるタスクの管理
+- 応募メモ、面接ログ、振り返り、志望度の記録
+- ダッシュボードで全体状況を確認する画面
+- PostgreSQL へのデータ保存
+- Prisma を使った基本的な CRUD
+
+## 現在の初期フェーズではまだ作らない機能
+
+現在は設計整理フェーズのため、以下はまだ実装しません。ただし、Prisma、PostgreSQL、CRUD は v1.0 MVP から除外するものではなく、画面構成とデータモデルを整理した後に段階的に追加します。
+
+- 本番向け認証
+- Prisma 導入
+- 外部データベース接続
+- CRUD 機能
+
+認証は v1.0 後半で追加する候補として扱います。
+
+## v1.0 MVP ではまだ作らない機能
+
+以下は v1.0 MVP では実装せず、後続フェーズで検討します。
+
+- AI による応募書類生成
+- AI による面接対策
+- 実在企業 API との連携
+- 複数ユーザー向けの共有機能
+- 高度な分析グラフ
+
+## 使用予定技術
+
+現時点での予定技術は以下です。実装の進行に合わせて見直します。
+
+- Next.js
+- React
+- TypeScript
+- Tailwind CSS
+- ESLint
+- Prisma
+- PostgreSQL
+- 認証ライブラリ
+- OpenAI API などの AI API
+
+現時点で導入済みなのは、Next.js、React、TypeScript、Tailwind CSS、ESLint です。
+
+## AI 活用方針
+
+AI は、アプリの中心機能として段階的に追加する予定です。ただし、最初から AI 機能を実装するのではなく、まずは就活データを整理して蓄積できる土台を作ります。
+
+想定している AI 活用は以下です。
+
+- 自己 PR や志望動機のたたき台作成
+- 面接後の振り返り整理
+- 応募先ごとの準備タスク提案
+- 過去メモをもとにした面接対策
+
+AI の出力はそのまま使う前提ではなく、ユーザーが判断し、修正して使う補助機能として扱います。
+
+## 今後の予定
+
+1. README と設計ドキュメントを整備する
+2. MVP の画面構成を決める
+3. モックデータで応募管理画面を作る
+4. データモデルを設計する
+5. Prisma と DB 接続を追加する
+6. CRUD 機能を実装する
+7. 認証を追加する
+8. AI 機能を段階的に追加する
+
+詳細な設計方針は [docs/00-project-overview.md](docs/00-project-overview.md) にまとめています。
