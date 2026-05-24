@@ -5,6 +5,11 @@ import {
   getCompanyById,
   type CompanyPriority,
 } from "@/lib/mock-companies";
+import {
+  getIncompleteTaskCountByCompanyId,
+  getTasksByCompanyId,
+  type TaskPriority,
+} from "@/lib/mock-tasks";
 
 const priorityStyles: Record<CompanyPriority, string> = {
   高: "bg-rose-50 text-rose-700 ring-rose-200",
@@ -12,7 +17,14 @@ const priorityStyles: Record<CompanyPriority, string> = {
   低: "bg-slate-100 text-slate-700 ring-slate-200",
 };
 
+const taskPriorityStyles: Record<TaskPriority, string> = priorityStyles;
+
 const statusStyles = "bg-sky-50 text-sky-700 ring-sky-200";
+
+const taskStatusStyles = {
+  completed: "bg-emerald-50 text-emerald-700 ring-emerald-200",
+  incomplete: "bg-slate-100 text-slate-700 ring-slate-200",
+};
 
 type CompanyDetailPageProps = {
   params: Promise<{ id: string }>;
@@ -28,11 +40,14 @@ export default async function CompanyDetailPage({
     notFound();
   }
 
+  const relatedTasks = getTasksByCompanyId(company.id);
+  const incompleteTaskCount = getIncompleteTaskCountByCompanyId(company.id);
+
   const summaryItems = [
     ["応募ポジション", company.position],
     ["次のアクション", company.nextAction],
     ["次回予定日", company.nextScheduledDate],
-    ["未完了タスク数", `${company.incompleteTaskCount}件`],
+    ["未完了タスク数", `${incompleteTaskCount}件`],
     ["最終更新日", company.updatedAt],
   ];
 
@@ -95,17 +110,65 @@ export default async function CompanyDetailPage({
                 関連タスク
               </h2>
               <span className="text-sm text-slate-500">
-                {company.incompleteTaskCount}件
+                未完了 {incompleteTaskCount}件
               </span>
             </div>
-            <div className="mt-4 rounded-md border border-dashed border-slate-200 bg-slate-50 p-4">
-              <p className="text-sm font-medium text-slate-800">
-                {company.nextAction}
-              </p>
-              <p className="mt-2 text-sm leading-6 text-slate-600">
-                Task モデルと紐づける予定の仮表示です。
-              </p>
-            </div>
+            {relatedTasks.length > 0 ? (
+              <div className="mt-4 flex flex-col gap-3">
+                {relatedTasks.map((task) => (
+                  <article
+                    key={task.id}
+                    className="rounded-md border border-slate-200 bg-slate-50 p-4"
+                  >
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                      <div>
+                        <h3 className="text-sm font-semibold text-slate-900">
+                          {task.name}
+                        </h3>
+                        <p className="mt-2 text-sm leading-6 text-slate-600">
+                          {task.memo}
+                        </p>
+                      </div>
+                      <div className="flex shrink-0 flex-wrap gap-2">
+                        <span
+                          className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset ${task.isCompleted ? taskStatusStyles.completed : taskStatusStyles.incomplete}`}
+                        >
+                          {task.isCompleted ? "完了" : "未完了"}
+                        </span>
+                        <span
+                          className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset ${taskPriorityStyles[task.priority]}`}
+                        >
+                          優先度: {task.priority}
+                        </span>
+                      </div>
+                    </div>
+                    <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
+                      <div>
+                        <dt className="text-slate-500">期限</dt>
+                        <dd className="mt-1 font-medium text-slate-900">
+                          {task.dueDate}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt className="text-slate-500">完了状態</dt>
+                        <dd className="mt-1 font-medium text-slate-900">
+                          {task.isCompleted ? "完了" : "未完了"}
+                        </dd>
+                      </div>
+                    </dl>
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <div className="mt-4 rounded-md border border-dashed border-slate-200 bg-slate-50 p-4">
+                <p className="text-sm font-medium text-slate-800">
+                  関連タスクはまだありません
+                </p>
+                <p className="mt-2 text-sm leading-6 text-slate-600">
+                  この企業に紐づくタスクが追加されると、ここに表示されます。
+                </p>
+              </div>
+            )}
           </div>
 
           <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">

@@ -16,7 +16,6 @@ export type Company = {
   priority: CompanyPriority;
   nextAction: string;
   nextScheduledDate: string;
-  incompleteTaskCount: number;
   updatedAt: string;
 };
 
@@ -29,7 +28,6 @@ export const companies: Company[] = [
     priority: "高",
     nextAction: "面接想定質問を整理する",
     nextScheduledDate: "2026-05-28",
-    incompleteTaskCount: 3,
     updatedAt: "2026-05-22",
   },
   {
@@ -40,7 +38,6 @@ export const companies: Company[] = [
     priority: "中",
     nextAction: "職務経歴書を送付する",
     nextScheduledDate: "2026-05-30",
-    incompleteTaskCount: 2,
     updatedAt: "2026-05-21",
   },
   {
@@ -51,7 +48,6 @@ export const companies: Company[] = [
     priority: "中",
     nextAction: "求人票の必須要件を確認する",
     nextScheduledDate: "2026-06-03",
-    incompleteTaskCount: 4,
     updatedAt: "2026-05-20",
   },
   {
@@ -62,7 +58,6 @@ export const companies: Company[] = [
     priority: "高",
     nextAction: "逆質問を3つ準備する",
     nextScheduledDate: "2026-05-27",
-    incompleteTaskCount: 1,
     updatedAt: "2026-05-23",
   },
   {
@@ -73,11 +68,9 @@ export const companies: Company[] = [
     priority: "低",
     nextAction: "返信期限を確認する",
     nextScheduledDate: "2026-06-05",
-    incompleteTaskCount: 1,
     updatedAt: "2026-05-19",
   },
 ];
 
 export const getCompanyById = (id: string) =>
   companies.find((company) => company.id === id);
-

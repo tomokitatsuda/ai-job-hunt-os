@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { companies, type CompanyPriority } from "@/lib/mock-companies";
+import { getIncompleteTaskCountByCompanyId } from "@/lib/mock-tasks";
 
 const priorityStyles: Record<CompanyPriority, string> = {
   高: "bg-rose-50 text-rose-700 ring-rose-200",
@@ -94,7 +95,7 @@ export default function CompaniesPage() {
                       {company.nextScheduledDate}
                     </td>
                     <td className="whitespace-nowrap px-4 py-4 text-right font-medium text-slate-950">
-                      {company.incompleteTaskCount}
+                      {getIncompleteTaskCountByCompanyId(company.id)}
                     </td>
                     <td className="whitespace-nowrap px-4 py-4 text-slate-700">
                       {company.updatedAt}
