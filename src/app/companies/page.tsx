@@ -79,11 +79,19 @@ export default async function CompaniesPage() {
                 応募中・応募予定の企業と、次に進めるべきアクションを確認できます。
               </p>
             </div>
-            <div className="text-sm text-slate-500">
-              登録企業数:{" "}
-              <span className="font-semibold text-slate-900">
-                {companies.length}
-              </span>
+            <div className="flex flex-col gap-3 sm:items-end">
+              <Link
+                href="/companies/new"
+                className="inline-flex items-center justify-center rounded-md bg-slate-950 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-slate-800"
+              >
+                企業を追加
+              </Link>
+              <div className="text-sm text-slate-500">
+                登録企業数:{" "}
+                <span className="font-semibold text-slate-900">
+                  {companies.length}
+                </span>
+              </div>
             </div>
           </div>
         </header>
