@@ -1,7 +1,24 @@
 import Link from "next/link";
+import { connection } from "next/server";
 
-import { companies, type CompanyPriority } from "@/lib/mock-companies";
-import { getIncompleteTaskCountByCompanyId } from "@/lib/mock-tasks";
+import type { ApplicationStatus } from "@/generated/prisma/client";
+
+type CompanyPriority = "高" | "中" | "低";
+
+const demoUserId = "demo-user";
+
+const statusLabels: Record<ApplicationStatus, string> = {
+  NOT_APPLIED: "応募準備",
+  APPLIED: "応募済み",
+  DOCUMENT_SCREENING: "書類選考",
+  DOCUMENT_PASSED: "書類通過",
+  FIRST_INTERVIEW: "一次面接",
+  SECOND_INTERVIEW: "二次面接",
+  FINAL_INTERVIEW: "最終面接",
+  OFFER: "内定",
+  REJECTED: "不採用",
+  WITHDRAWN: "辞退",
+};
 
 const priorityStyles: Record<CompanyPriority, string> = {
   高: "bg-rose-50 text-rose-700 ring-rose-200",
@@ -9,7 +26,45 @@ const priorityStyles: Record<CompanyPriority, string> = {
   低: "bg-slate-100 text-slate-700 ring-slate-200",
 };
 
-export default function CompaniesPage() {
+const formatDate = (date: Date | null) =>
+  date ? date.toISOString().slice(0, 10) : "-";
+
+const getPriorityLabel = (priority: number): CompanyPriority => {
+  if (priority >= 4) {
+    return "高";
+  }
+
+  if (priority === 3) {
+    return "中";
+  }
+
+  return "低";
+};
+
+export default async function CompaniesPage() {
+  await connection();
+
+  const { prisma } = await import("@/lib/prisma");
+  const companies = await prisma.company.findMany({
+    where: {
+      userId: demoUserId,
+    },
+    orderBy: {
+      updatedAt: "desc",
+    },
+    include: {
+      _count: {
+        select: {
+          tasks: {
+            where: {
+              isCompleted: false,
+            },
+          },
+        },
+      },
+    },
+  });
+
   return (
     <main className="min-h-screen bg-slate-50 px-4 py-8 text-slate-950 sm:px-6 lg:px-8">
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
@@ -65,43 +120,47 @@ export default function CompaniesPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 bg-white">
-                {companies.map((company) => (
-                  <tr key={company.id} className="hover:bg-slate-50">
-                    <td className="whitespace-nowrap px-4 py-4 font-medium text-slate-950">
-                      <Link
-                        href={`/companies/${company.id}`}
-                        className="text-slate-950 underline-offset-4 hover:text-slate-700 hover:underline"
-                      >
-                        {company.name}
-                      </Link>
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-4 text-slate-700">
-                      {company.position}
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-4 text-slate-700">
-                      {company.status}
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-4">
-                      <span
-                        className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset ${priorityStyles[company.priority]}`}
-                      >
-                        {company.priority}
-                      </span>
-                    </td>
-                    <td className="min-w-56 px-4 py-4 text-slate-700">
-                      {company.nextAction}
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-4 text-slate-700">
-                      {company.nextScheduledDate}
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-4 text-right font-medium text-slate-950">
-                      {getIncompleteTaskCountByCompanyId(company.id)}
-                    </td>
-                    <td className="whitespace-nowrap px-4 py-4 text-slate-700">
-                      {company.updatedAt}
-                    </td>
-                  </tr>
-                ))}
+                {companies.map((company) => {
+                  const priority = getPriorityLabel(company.priority);
+
+                  return (
+                    <tr key={company.id} className="hover:bg-slate-50">
+                      <td className="whitespace-nowrap px-4 py-4 font-medium text-slate-950">
+                        <Link
+                          href={`/companies/${company.id}`}
+                          className="text-slate-950 underline-offset-4 hover:text-slate-700 hover:underline"
+                        >
+                          {company.name}
+                        </Link>
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-4 text-slate-700">
+                        {company.position ?? "-"}
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-4 text-slate-700">
+                        {statusLabels[company.status]}
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-4">
+                        <span
+                          className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ring-1 ring-inset ${priorityStyles[priority]}`}
+                        >
+                          {priority}
+                        </span>
+                      </td>
+                      <td className="min-w-56 px-4 py-4 text-slate-700">
+                        {company.nextAction ?? "-"}
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-4 text-slate-700">
+                        {formatDate(company.nextScheduledDate)}
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-4 text-right font-medium text-slate-950">
+                        {company._count.tasks}
+                      </td>
+                      <td className="whitespace-nowrap px-4 py-4 text-slate-700">
+                        {formatDate(company.updatedAt)}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
