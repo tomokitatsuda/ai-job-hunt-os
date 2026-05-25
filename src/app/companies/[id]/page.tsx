@@ -140,12 +140,18 @@ export default async function CompanyDetailPage({
   return (
     <main className="min-h-screen bg-slate-50 px-4 py-8 text-slate-950 sm:px-6 lg:px-8">
       <div className="mx-auto flex w-full max-w-5xl flex-col gap-6">
-        <div>
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <Link
             href="/companies"
             className="text-sm font-medium text-slate-600 underline-offset-4 hover:text-slate-950 hover:underline"
           >
             企業一覧へ戻る
+          </Link>
+          <Link
+            href={`/companies/${company.id}/edit`}
+            className="inline-flex items-center justify-center rounded-md bg-slate-950 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-slate-800"
+          >
+            編集
           </Link>
         </div>
 
