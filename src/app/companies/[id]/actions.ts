@@ -35,6 +35,17 @@ const parseTaskPriority = (value: FormDataEntryValue | null) => {
   return priority;
 };
 
+const parseInterviewDate = (value: FormDataEntryValue | null) => {
+  const dateText = toNullableString(value);
+
+  if (!dateText) {
+    return null;
+  }
+
+  const date = new Date(`${dateText}T00:00:00.000Z`);
+  return Number.isNaN(date.getTime()) ? null : date;
+};
+
 export async function deleteCompany(companyId: string) {
   const { prisma } = await import("@/lib/prisma");
   const companyToDelete = await prisma.company.findFirst({
@@ -108,6 +119,65 @@ export async function createTask(companyId: string, formData: FormData) {
       dueDate: parseTaskDueDate(formData.get("dueDate")),
       priority: parseTaskPriority(formData.get("priority")),
       memo: toNullableString(formData.get("memo")),
+    },
+  });
+
+  revalidatePath("/companies");
+  revalidatePath(`/companies/${companyId}`);
+  redirect(`/companies/${companyId}`);
+}
+
+export async function createInterviewLog(
+  companyId: string,
+  formData: FormData,
+) {
+  const interviewDate = parseInterviewDate(formData.get("interviewDate"));
+  const interviewType = toNullableString(formData.get("interviewType"));
+  const questions = toNullableString(formData.get("questions"));
+  const answerMemo = toNullableString(formData.get("answerMemo"));
+  const goodPoints = toNullableString(formData.get("goodPoints"));
+  const improvementPoints = toNullableString(
+    formData.get("improvementPoints"),
+  );
+  const nextPreparation = toNullableString(formData.get("nextPreparation"));
+
+  if (
+    !interviewDate &&
+    !interviewType &&
+    !questions &&
+    !answerMemo &&
+    !goodPoints &&
+    !improvementPoints &&
+    !nextPreparation
+  ) {
+    return;
+  }
+
+  const { prisma } = await import("@/lib/prisma");
+  const companyForInterviewLog = await prisma.company.findFirst({
+    where: {
+      id: companyId,
+      userId: demoUserId,
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  if (!companyForInterviewLog) {
+    notFound();
+  }
+
+  await prisma.interviewLog.create({
+    data: {
+      companyId,
+      interviewDate,
+      interviewType,
+      questions,
+      answerMemo,
+      goodPoints,
+      improvementPoints,
+      nextPreparation,
     },
   });
 

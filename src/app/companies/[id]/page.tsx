@@ -138,7 +138,10 @@ export default async function CompanyDetailPage({
             incompleteTaskCount={incompleteTaskCount}
             tasks={relatedTasks}
           />
-          <InterviewLogSection interviewLogs={interviewLogs} />
+          <InterviewLogSection
+            companyId={company.id}
+            interviewLogs={interviewLogs}
+          />
         </section>
 
         <DeleteCompanySection companyId={company.id} />
