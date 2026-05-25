@@ -1,5 +1,6 @@
+import { revalidatePath } from "next/cache";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { connection } from "next/server";
 
 import type { ApplicationStatus } from "@/generated/prisma/client";
@@ -120,6 +121,51 @@ export default async function CompanyDetailPage({
 
   if (!company) {
     notFound();
+  }
+
+  async function deleteCompany() {
+    "use server";
+
+    const { prisma } = await import("@/lib/prisma");
+    const companyToDelete = await prisma.company.findFirst({
+      where: {
+        id,
+        userId: demoUserId,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (!companyToDelete) {
+      notFound();
+    }
+
+    await prisma.$transaction([
+      prisma.interviewLog.deleteMany({
+        where: {
+          companyId: id,
+        },
+      }),
+      prisma.task.updateMany({
+        where: {
+          companyId: id,
+          userId: demoUserId,
+        },
+        data: {
+          companyId: null,
+        },
+      }),
+      prisma.company.delete({
+        where: {
+          id,
+        },
+      }),
+    ]);
+
+    revalidatePath("/companies");
+    revalidatePath(`/companies/${id}`);
+    redirect("/companies");
   }
 
   const relatedTasks = company.tasks;
@@ -334,6 +380,27 @@ export default async function CompanyDetailPage({
                 </p>
               </div>
             )}
+          </div>
+        </section>
+
+        <section className="rounded-lg border border-rose-200 bg-white p-5 shadow-sm">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="text-base font-semibold text-rose-950">
+                企業を削除
+              </h2>
+              <p className="mt-2 text-sm leading-6 text-rose-700">
+                削除すると元に戻せません。面接ログは削除され、関連タスクは一般タスクとして残ります。
+              </p>
+            </div>
+            <form action={deleteCompany}>
+              <button
+                type="submit"
+                className="inline-flex w-full items-center justify-center rounded-md bg-rose-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-rose-700 sm:w-auto"
+              >
+                企業を削除
+              </button>
+            </form>
           </div>
         </section>
       </div>
