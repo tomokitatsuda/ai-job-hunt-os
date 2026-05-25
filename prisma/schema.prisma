@@ -1,0 +1,93 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum ApplicationStatus {
+  NOT_APPLIED
+  APPLIED
+  DOCUMENT_SCREENING
+  DOCUMENT_PASSED
+  FIRST_INTERVIEW
+  SECOND_INTERVIEW
+  FINAL_INTERVIEW
+  OFFER
+  REJECTED
+  WITHDRAWN
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  companies Company[]
+  tasks     Task[]
+}
+
+model Company {
+  id                String            @id @default(cuid())
+  userId            String
+  name              String
+  websiteUrl        String?
+  industry          String?
+  position          String?
+  status            ApplicationStatus @default(NOT_APPLIED)
+  priority          Int               @default(3)
+  nextAction        String?
+  nextScheduledDate DateTime?
+  memo              String?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  user          User           @relation(fields: [userId], references: [id])
+  tasks         Task[]
+  interviewLogs InterviewLog[]
+
+  @@index([userId])
+}
+
+model Task {
+  id          String    @id @default(cuid())
+  userId      String
+  companyId   String?
+  title       String
+  dueDate     DateTime?
+  isCompleted Boolean   @default(false)
+  priority    Int       @default(3)
+  memo        String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  user    User     @relation(fields: [userId], references: [id])
+  company Company? @relation(fields: [companyId], references: [id])
+
+  @@index([userId])
+  @@index([companyId])
+}
+
+model InterviewLog {
+  id                String    @id @default(cuid())
+  companyId         String
+  interviewDate     DateTime?
+  interviewType     String?
+  questions         String?
+  answerMemo        String?
+  goodPoints        String?
+  improvementPoints String?
+  nextPreparation   String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  company Company @relation(fields: [companyId], references: [id])
+
+  @@index([companyId])
+}
