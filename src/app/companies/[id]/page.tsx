@@ -42,6 +42,36 @@ const formatDate = (date: Date | null) =>
 
 const formatText = (value: string | null) => value ?? "-";
 
+const toNullableString = (value: FormDataEntryValue | null) => {
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const trimmedValue = value.trim();
+  return trimmedValue.length > 0 ? trimmedValue : null;
+};
+
+const parseTaskDueDate = (value: FormDataEntryValue | null) => {
+  const dateText = toNullableString(value);
+
+  if (!dateText) {
+    return null;
+  }
+
+  const date = new Date(`${dateText}T00:00:00.000Z`);
+  return Number.isNaN(date.getTime()) ? null : date;
+};
+
+const parseTaskPriority = (value: FormDataEntryValue | null) => {
+  const priority = Number(toNullableString(value));
+
+  if (!Number.isInteger(priority) || priority < 1 || priority > 5) {
+    return 3;
+  }
+
+  return priority;
+};
+
 const getPriorityLabel = (priority: number): PriorityLabel => {
   if (priority >= 4) {
     return "高";
@@ -168,6 +198,92 @@ export default async function CompanyDetailPage({
     redirect("/companies");
   }
 
+  async function createTask(formData: FormData) {
+    "use server";
+
+    const title = toNullableString(formData.get("title"));
+
+    if (!title) {
+      return;
+    }
+
+    const { prisma } = await import("@/lib/prisma");
+    const companyForTask = await prisma.company.findFirst({
+      where: {
+        id,
+        userId: demoUserId,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (!companyForTask) {
+      notFound();
+    }
+
+    await prisma.task.create({
+      data: {
+        userId: demoUserId,
+        companyId: id,
+        title,
+        dueDate: parseTaskDueDate(formData.get("dueDate")),
+        priority: parseTaskPriority(formData.get("priority")),
+        memo: toNullableString(formData.get("memo")),
+      },
+    });
+
+    revalidatePath("/companies");
+    revalidatePath(`/companies/${id}`);
+    redirect(`/companies/${id}`);
+  }
+
+  async function toggleTaskCompletion(formData: FormData) {
+    "use server";
+
+    const taskId = toNullableString(formData.get("taskId"));
+
+    if (!taskId) {
+      return;
+    }
+
+    const { prisma } = await import("@/lib/prisma");
+    const task = await prisma.task.findFirst({
+      where: {
+        id: taskId,
+        userId: demoUserId,
+        companyId: id,
+      },
+      select: {
+        id: true,
+        isCompleted: true,
+      },
+    });
+
+    if (!task) {
+      notFound();
+    }
+
+    const result = await prisma.task.updateMany({
+      where: {
+        id: task.id,
+        userId: demoUserId,
+        companyId: id,
+      },
+      data: {
+        isCompleted: !task.isCompleted,
+      },
+    });
+
+    if (result.count === 0) {
+      notFound();
+    }
+
+    revalidatePath("/companies");
+    revalidatePath(`/companies/${id}`);
+    redirect(`/companies/${id}`);
+  }
+
   const relatedTasks = company.tasks;
   const interviewLogs = company.interviewLogs;
   const incompleteTaskCount = relatedTasks.filter(
@@ -251,6 +367,64 @@ export default async function CompanyDetailPage({
                 未完了 {incompleteTaskCount}件
               </span>
             </div>
+            <form
+              action={createTask}
+              className="mt-4 rounded-md border border-slate-200 bg-slate-50 p-4"
+            >
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className="flex flex-col gap-2 sm:col-span-2">
+                  <span className="text-sm font-medium text-slate-700">
+                    タスク名 <span className="text-rose-600">*</span>
+                  </span>
+                  <input
+                    name="title"
+                    required
+                    className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+                  />
+                </label>
+                <label className="flex flex-col gap-2">
+                  <span className="text-sm font-medium text-slate-700">
+                    期限
+                  </span>
+                  <input
+                    name="dueDate"
+                    type="date"
+                    className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+                  />
+                </label>
+                <label className="flex flex-col gap-2">
+                  <span className="text-sm font-medium text-slate-700">
+                    優先度
+                  </span>
+                  <input
+                    name="priority"
+                    type="number"
+                    min="1"
+                    max="5"
+                    defaultValue={3}
+                    className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+                  />
+                </label>
+                <label className="flex flex-col gap-2 sm:col-span-2">
+                  <span className="text-sm font-medium text-slate-700">
+                    メモ
+                  </span>
+                  <textarea
+                    name="memo"
+                    rows={3}
+                    className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+                  />
+                </label>
+              </div>
+              <div className="mt-4 flex justify-end">
+                <button
+                  type="submit"
+                  className="inline-flex items-center justify-center rounded-md bg-slate-950 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-slate-800"
+                >
+                  タスクを追加
+                </button>
+              </div>
+            </form>
             {relatedTasks.length > 0 ? (
               <div className="mt-4 flex flex-col gap-3">
                 {relatedTasks.map((task) => (
@@ -294,6 +468,15 @@ export default async function CompanyDetailPage({
                         </dd>
                       </div>
                     </dl>
+                    <form action={toggleTaskCompletion} className="mt-4">
+                      <input type="hidden" name="taskId" value={task.id} />
+                      <button
+                        type="submit"
+                        className="inline-flex items-center justify-center rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-800 shadow-sm hover:bg-slate-100"
+                      >
+                        {task.isCompleted ? "未完了に戻す" : "完了にする"}
+                      </button>
+                    </form>
                   </article>
                 ))}
               </div>
