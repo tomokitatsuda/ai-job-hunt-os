@@ -6,9 +6,9 @@
 
 最初はモックデータを使って、企業一覧、企業詳細、企業に紐づくタスク、面接ログを画面で確認できる状態にしました。その後、Prisma 7 + PostgreSQL + Docker Compose を導入し、現在は Company を中心に、Task と InterviewLog を紐づけて DB 操作を確認する段階まで進んでいます。
 
-Company は一覧、詳細、作成、編集、削除まで実装済みです。Task と InterviewLog は、まず企業詳細画面内で表示・作成・更新・削除できる最小構成にしています。Dashboard では DB 由来の集計を表示できる状態になっています。
+Company は一覧、詳細、作成、編集、削除まで実装済みです。Task は企業詳細画面内で表示・作成・更新・削除でき、Task 一覧画面でも demo user の全 Task を未完了 / 完了に分けて確認できます。InterviewLog は、まず企業詳細画面内で表示・作成・更新・削除できる最小構成にしています。Dashboard では DB 由来の集計を表示できる状態になっています。
 
-ただし、認証、AI 機能、Task 一覧画面、一般 Task 作成画面、InterviewLog 一覧画面はまだ実装していません。現在は demo user 固定で DB を読み書きしています。
+ただし、認証、AI 機能、一般 Task 作成画面、`/tasks/[taskId]/edit`、Task 一覧画面からの Task 削除、InterviewLog 一覧画面はまだ実装していません。現在は demo user 固定で DB を読み書きしています。
 
 就活 GitHub として読まれたときに、現在の実装範囲、まだ実装していない範囲、次に進む候補が伝わることを目的にしています。
 
@@ -20,7 +20,17 @@ Dashboard 画面です。
 
 DB から demo user の Company / Task / InterviewLog を読み込み、応募企業数、未完了 Task 数、直近の Task 締切、直近の面接日、選考ステータス別件数、志望度の高い Company、直近の Task / InterviewLog を表示しています。
 
-企業一覧画面と企業作成画面への導線も置いています。
+企業一覧画面、企業作成画面、Task 一覧画面への導線も置いています。
+
+### `/tasks`
+
+Task 一覧画面です。
+
+DB から demo user の全 Task を読み込み、未完了 Task と完了 Task に分けて表示しています。
+
+この画面から、Task の完了/未完了を切り替えられます。また、関連 Company がある Task では Company 詳細画面へのリンクを表示します。
+
+現時点では、この画面からの Task 新規作成、Task 編集、Task 削除はまだ実装していません。
 
 ### `/companies`
 
@@ -168,6 +178,7 @@ Prisma 7 を導入し、ローカル開発では Docker Compose で PostgreSQL �
 - 選考ステータス別件数を確認できる
 - 志望度の高い Company を確認できる
 - 直近の Task / InterviewLog を確認できる
+- Dashboard から Task 一覧画面へ移動できる
 - 企業一覧を DB から表示できる
 - 企業詳細を DB から表示できる
 - 企業を作成できる
@@ -177,13 +188,16 @@ Prisma 7 を導入し、ローカル開発では Docker Compose で PostgreSQL �
 - 企業詳細画面内で、Company に紐づく Task を作成できる
 - 企業詳細画面内で、Task の完了/未完了を切り替えられる
 - 企業詳細画面内で、Task を編集・削除できる
+- Task 一覧画面で、demo user の全 Task を未完了 / 完了に分けて表示できる
+- Task 一覧画面で、Task の完了/未完了を切り替えられる
+- Task 一覧画面で、関連 Company へのリンクを表示できる
 - 企業ごとの面接ログを DB から表示できる
 - 企業詳細画面内で、Company に紐づく InterviewLog を作成できる
 - 企業詳細画面内で、InterviewLog を編集・削除できる
 - 企業一覧から企業詳細へ移動できる
 - 存在しない企業 ID にアクセスした場合は 404 になる
 
-Task と InterviewLog は、まず企業詳細画面内で表示・作成・更新・削除できる最小構成にしています。
+Task は Company 詳細画面内で表示・作成・更新・削除でき、Task 一覧画面では全 Task の確認と完了状態の切り替えができます。InterviewLog は、まず企業詳細画面内で表示・作成・更新・削除できる最小構成にしています。
 
 ## 6. まだ実装していないこと
 
@@ -194,8 +208,9 @@ Task と InterviewLog は、まず企業詳細画面内で表示・作成・更�
 - ログインユーザーごとのデータ分離
 - AI 機能
 - 検索・フィルター
-- Task 一覧画面
 - 一般 Task 作成画面
+- `/tasks/[taskId]/edit`
+- Task 一覧画面からの Task 削除
 - InterviewLog 一覧画面
 - デプロイ
 - テスト本格整備
@@ -212,7 +227,7 @@ AI Job Hunt OS では、Company を中心に Task と InterviewLog を紐づけ�
 
 その後、Prisma + PostgreSQL に移行し、`/companies` と `/companies/[id]` は DB 由来のデータを表示するようにしました。Company は中心データとして CRUD まで進め、応募先企業を登録、確認、更新、削除できる状態にしています。
 
-Task と InterviewLog は、まず企業詳細画面内で表示・作成・更新・削除できる最小構成にしました。Company に紐づけて作成し、Task は完了/未完了の切り替えも確認できるようにしています。一方で、Task 一覧画面、一般 Task 作成画面、InterviewLog 一覧画面はまだ未実装です。
+Task と InterviewLog は、まず企業詳細画面内で表示・作成・更新・削除できる最小構成にしました。Company に紐づけて作成し、Task は完了/未完了の切り替えも確認できるようにしています。さらに Task 一覧画面では、demo user の全 Task を未完了 / 完了に分けて確認し、関連 Company へ移動できるようにしています。一方で、一般 Task 作成画面、`/tasks/[taskId]/edit`、Task 一覧画面からの Task 削除、InterviewLog 一覧画面はまだ未実装です。
 
 ただし、認証はまだ未実装です。現在は demo user 固定で DB を読み書きし、将来的に Auth.js / NextAuth 導入後、ログインユーザーごとのデータ取得に切り替える方針です。
 
@@ -231,7 +246,7 @@ Company に紐づく InterviewLog は削除します。一方で、Company に�
 次に進む候補は以下です。
 
 - README / docs の継続整備
-- Task 一覧画面、一般 Task 作成画面、InterviewLog 一覧画面の検討
+- 一般 Task 作成画面、Task 一覧画面からの編集・削除、InterviewLog 一覧画面の検討
 - 検索・フィルター
 - 認証
 - ログインユーザーごとのデータ取得への切り替え
@@ -247,6 +262,7 @@ Company に紐づく InterviewLog は削除します。一方で、Company に�
 - Company / Task / InterviewLog の責務を分けた
 - Task と InterviewLog は Company に紐づく設計にした
 - Company は CRUD まで進め、Task と InterviewLog は企業詳細画面内で表示・作成・更新・削除できる最小構成にした
+- Task 一覧画面で demo user の全 Task を未完了 / 完了に分けて確認し、完了状態を切り替えられるようにした
 - Dashboard では DB 集計により、応募状況、未完了タスク、直近予定を一画面で確認できるようにした
 - demo user 固定で DB 操作を先に検証し、認証導入前の段階的実装にした
 - seed により、ローカル開発環境で再現できるサンプルデータを用意した

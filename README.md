@@ -27,16 +27,20 @@ AI Job Hunt OS では、就活に必要な情報を Company を中心に整理�
   - 選考ステータス別件数
   - 志望度の高い Company
   - 直近の Task / InterviewLog
+  - Task 一覧画面への導線
 - Company 一覧表示
 - Company 詳細表示
 - Company 作成・編集・削除
 - Company 詳細画面内での Task 表示・作成・完了切り替え・編集・削除
+- Task 一覧画面での未完了 / 完了 Task 表示
+- Task 一覧画面での完了 / 未完了切り替え
+- Task 一覧画面での関連 Company へのリンク表示
 - Company 詳細画面内での InterviewLog 表示・作成・編集・削除
 - Prisma + PostgreSQL による DB 保存
 - Docker Compose によるローカル PostgreSQL 起動
 - seed による demo user とサンプルデータ投入
 
-Task と InterviewLog は、現時点では Company 詳細画面内で扱う最小構成です。Task 一覧画面、一般 Task 作成画面、InterviewLog 一覧画面は、実装済みとは扱っていません。
+Task は Company 詳細画面内で作成・編集・削除でき、Task 一覧画面では demo user の全 Task を未完了 / 完了に分けて確認し、完了状態を切り替えられます。一般 Task 作成画面、Task 一覧画面からの削除、InterviewLog 一覧画面は、実装済みとは扱っていません。
 
 ## スクリーンショット
 
@@ -64,8 +68,9 @@ Company の基本情報と、その Company に紐づく Task / InterviewLog を
 - ユーザー登録・ログイン
 - ログインユーザーごとのデータ分離
 - AI 機能
-- Task 一覧画面
 - 一般 Task 作成画面
+- `/tasks/[taskId]/edit`
+- Task 一覧画面からの Task 削除
 - InterviewLog 一覧画面
 - 検索・フィルター
 - デプロイ
@@ -129,7 +134,7 @@ AI 機能はまだ未実装です。将来的には、蓄積した Company / Tas
 ## 今後の予定
 
 1. README / docs の継続整備
-2. Task 一覧画面、一般 Task 作成画面、InterviewLog 一覧画面の検討
+2. 一般 Task 作成画面、Task 一覧画面からの編集・削除、InterviewLog 一覧画面の検討
 3. 検索・フィルターの追加
 4. 認証の追加
 5. ログインユーザーごとのデータ取得への切り替え
