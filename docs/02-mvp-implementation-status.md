@@ -6,9 +6,9 @@
 
 最初はモックデータを使って、企業一覧、企業詳細、企業に紐づくタスク、面接ログを画面で確認できる状態にしました。その後、Prisma 7 + PostgreSQL + Docker Compose を導入し、現在は Company を中心に、Task と InterviewLog を紐づけて DB 操作を確認する段階まで進んでいます。
 
-Company は一覧、詳細、作成、編集、削除まで実装済みです。Task と InterviewLog は、まず企業詳細画面内で入力・確認できる最小構成にしています。
+Company は一覧、詳細、作成、編集、削除まで実装済みです。Task と InterviewLog は、まず企業詳細画面内で表示・作成・更新・削除できる最小構成にしています。
 
-ただし、認証、Task 編集・削除、InterviewLog 編集・削除、AI 機能はまだ実装していません。現在は demo user 固定で DB を読み書きしています。
+ただし、認証、AI 機能、Task 一覧画面、一般 Task 作成画面、InterviewLog 一覧画面はまだ実装していません。現在は demo user 固定で DB を読み書きしています。
 
 就活 GitHub として読まれたときに、現在の実装範囲、まだ実装していない範囲、次に進む候補が伝わることを目的にしています。
 
@@ -36,7 +36,7 @@ AI Job Hunt OS の概要を簡単に表示し、企業一覧画面へ移動で�
 
 DB から `Company` 詳細、関連する `Task`、`InterviewLog` を読み込み、企業ごとの選考状況、次のアクション、未完了タスク数、関連タスク、面接ログを確認できます。
 
-この画面から、企業編集、企業削除、Company に紐づく Task 作成、Task の完了/未完了切り替え、Company に紐づく InterviewLog 作成ができます。
+この画面から、企業編集、企業削除、Company に紐づく Task 作成、Task の完了/未完了切り替え、Task 編集、Task 削除、Company に紐づく InterviewLog 作成、InterviewLog 編集、InterviewLog 削除ができます。
 
 URL の `id` に対応する企業が存在しない場合は、404 ページになります。
 
@@ -139,12 +139,14 @@ Prisma 7 を導入し、ローカル開発では Docker Compose で PostgreSQL �
 - 企業ごとの関連タスクを DB から表示できる
 - 企業詳細画面内で、Company に紐づく Task を作成できる
 - 企業詳細画面内で、Task の完了/未完了を切り替えられる
+- 企業詳細画面内で、Task を編集・削除できる
 - 企業ごとの面接ログを DB から表示できる
 - 企業詳細画面内で、Company に紐づく InterviewLog を作成できる
+- 企業詳細画面内で、InterviewLog を編集・削除できる
 - 企業一覧から企業詳細へ移動できる
 - 存在しない企業 ID にアクセスした場合は 404 になる
 
-Task と InterviewLog は、まず企業詳細画面内で入力・確認できる最小構成にしています。
+Task と InterviewLog は、まず企業詳細画面内で表示・作成・更新・削除できる最小構成にしています。
 
 ## 5. まだ実装していないこと
 
@@ -152,12 +154,13 @@ Task と InterviewLog は、まず企業詳細画面内で入力・確認でき�
 
 - 認証
 - ユーザー登録・ログイン
-- Task 編集・削除
-- InterviewLog 編集・削除
 - AI 機能
 - 検索・フィルター
 - Task 一覧画面
+- 一般 Task 作成画面
 - InterviewLog 一覧画面
+- デプロイ
+- テスト本格整備
 
 この段階では、完成済みのアプリとしてではなく、モック MVP から DB 操作へ移行した途中段階として扱います。
 
@@ -171,7 +174,7 @@ AI Job Hunt OS では、Company を中心に Task と InterviewLog を紐づけ�
 
 その後、Prisma + PostgreSQL に移行し、`/companies` と `/companies/[id]` は DB 由来のデータを表示するようにしました。Company は中心データとして CRUD まで進め、応募先企業を登録、確認、更新、削除できる状態にしています。
 
-Task と InterviewLog は、まず企業詳細画面内で入力・確認できる最小構成にしました。Company に紐づけて作成し、Task は完了/未完了の切り替えまで確認できるようにしています。一方で、Task 編集・削除、InterviewLog 編集・削除、個別の一覧画面はまだ未実装です。
+Task と InterviewLog は、まず企業詳細画面内で表示・作成・更新・削除できる最小構成にしました。Company に紐づけて作成し、Task は完了/未完了の切り替えも確認できるようにしています。一方で、Task 一覧画面、一般 Task 作成画面、InterviewLog 一覧画面はまだ未実装です。
 
 ただし、認証はまだ未実装です。現在は demo user 固定で DB を読み書きし、将来的に Auth.js / NextAuth 導入後、ログインユーザーごとのデータ取得に切り替える方針です。
 
@@ -189,13 +192,8 @@ Company に紐づく InterviewLog は削除します。一方で、Company に�
 
 次に進む候補は以下です。
 
-- Task 編集・削除
-- InterviewLog 編集・削除
-- Task 一覧画面
-- InterviewLog 一覧画面
-- 認証導入
-- 検索・フィルター
-- README への現状反映
+- Dashboard DB 集計
+- README / docs 整備
 
 ## 8. 面接で説明できるポイント
 
@@ -204,7 +202,7 @@ Company に紐づく InterviewLog は削除します。一方で、Company に�
 - いきなり DB 実装に進まず、まずモックで画面構成と情報設計を確認してから DB に移行した
 - Company / Task / InterviewLog の責務を分けた
 - Task と InterviewLog は Company に紐づく設計にした
-- Company は CRUD まで進め、Task と InterviewLog は企業詳細画面内で入力・確認できる最小構成にした
+- Company は CRUD まで進め、Task と InterviewLog は企業詳細画面内で表示・作成・更新・削除できる最小構成にした
 - demo user 固定で DB 操作を先に検証し、認証導入前の段階的実装にした
 - seed により、ローカル開発環境で再現できるサンプルデータを用意した
 - 存在しない企業 ID は 404 にして、最低限の異常系も扱った
