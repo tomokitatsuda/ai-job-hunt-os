@@ -89,18 +89,29 @@ DB 接続は Prisma 7 前提の構成です。`DATABASE_URL` は `prisma.config.
 
 今後の候補として、認証には Auth.js / NextAuth、AI 機能には OpenAI API などの利用を想定しています。
 
-## セットアップ
+## Quick Start
+
+必要なもの:
+
+- Git
+- Node.js / npm
+- Docker / Docker Compose
+
+ローカルでは Docker Compose で PostgreSQL を起動し、Prisma 7 + PostgreSQL に接続します。認証はまだ未実装で、現在は `demo-user` 固定のローカル MVP です。
 
 ```bash
 npm install
-cp .env.example .env
+cp .env.example .env.local
 docker compose up -d
+npx prisma generate
 npx prisma migrate dev
 npx prisma db seed
 npm run dev
 ```
 
 開発サーバー起動後、ブラウザで `http://localhost:3000` を開くと Dashboard を確認できます。
+
+詳しい手順や確認コマンドは [docs/setup.md](docs/setup.md) を参照してください。実際の `.env` / `.env.local` や `DATABASE_URL` は commit しないでください。
 
 ## AI 活用方針
 
