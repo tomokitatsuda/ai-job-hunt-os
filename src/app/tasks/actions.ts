@@ -94,3 +94,101 @@ export async function toggleTaskCompletionFromTaskList(formData: FormData) {
     revalidatePath(`/companies/${task.companyId}`);
   }
 }
+
+export async function updateTaskFromTaskList(
+  taskId: string,
+  formData: FormData,
+) {
+  const title = toNullableString(formData.get("title"));
+
+  if (!title) {
+    return;
+  }
+
+  const { prisma } = await import("@/lib/prisma");
+  const task = await prisma.task.findFirst({
+    where: {
+      id: taskId,
+      userId: demoUserId,
+    },
+    select: {
+      id: true,
+      companyId: true,
+    },
+  });
+
+  if (!task) {
+    notFound();
+  }
+
+  const result = await prisma.task.updateMany({
+    where: {
+      id: task.id,
+      userId: demoUserId,
+    },
+    data: {
+      title,
+      dueDate: parseTaskDueDate(formData.get("dueDate")),
+      memo: toNullableString(formData.get("memo")),
+    },
+  });
+
+  if (result.count === 0) {
+    notFound();
+  }
+
+  revalidatePath("/tasks");
+  revalidatePath("/");
+  revalidatePath("/companies");
+
+  if (task.companyId) {
+    revalidatePath(`/companies/${task.companyId}`);
+  }
+
+  redirect("/tasks");
+}
+
+export async function deleteTaskFromTaskList(formData: FormData) {
+  const taskId = toNullableString(formData.get("taskId"));
+
+  if (!taskId) {
+    return;
+  }
+
+  const { prisma } = await import("@/lib/prisma");
+  const task = await prisma.task.findFirst({
+    where: {
+      id: taskId,
+      userId: demoUserId,
+    },
+    select: {
+      id: true,
+      companyId: true,
+    },
+  });
+
+  if (!task) {
+    notFound();
+  }
+
+  const result = await prisma.task.deleteMany({
+    where: {
+      id: task.id,
+      userId: demoUserId,
+    },
+  });
+
+  if (result.count === 0) {
+    notFound();
+  }
+
+  revalidatePath("/tasks");
+  revalidatePath("/");
+  revalidatePath("/companies");
+
+  if (task.companyId) {
+    revalidatePath(`/companies/${task.companyId}`);
+  }
+
+  redirect("/tasks");
+}
