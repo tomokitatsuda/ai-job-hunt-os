@@ -81,6 +81,12 @@ export default async function CompaniesPage() {
             </div>
             <div className="flex flex-col gap-3 sm:items-end">
               <Link
+                href="/"
+                className="text-sm font-medium text-slate-600 underline-offset-4 hover:text-slate-900 hover:underline"
+              >
+                ダッシュボードへ戻る
+              </Link>
+              <Link
                 href="/companies/new"
                 className="inline-flex items-center justify-center rounded-md bg-slate-950 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-slate-800"
               >
