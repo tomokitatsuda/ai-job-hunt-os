@@ -245,6 +245,72 @@ export async function createInterviewLog(
   redirect(`/companies/${companyId}`);
 }
 
+export async function updateInterviewLog(
+  companyId: string,
+  interviewLogId: string,
+  formData: FormData,
+) {
+  const { prisma } = await import("@/lib/prisma");
+  const result = await prisma.interviewLog.updateMany({
+    where: {
+      id: interviewLogId,
+      companyId,
+      company: {
+        userId: demoUserId,
+      },
+    },
+    data: {
+      interviewDate: parseInterviewDate(formData.get("interviewDate")),
+      interviewType: toNullableString(formData.get("interviewType")),
+      questions: toNullableString(formData.get("questions")),
+      answerMemo: toNullableString(formData.get("answerMemo")),
+      goodPoints: toNullableString(formData.get("goodPoints")),
+      improvementPoints: toNullableString(
+        formData.get("improvementPoints"),
+      ),
+      nextPreparation: toNullableString(formData.get("nextPreparation")),
+    },
+  });
+
+  if (result.count === 0) {
+    notFound();
+  }
+
+  revalidatePath("/companies");
+  revalidatePath(`/companies/${companyId}`);
+  redirect(`/companies/${companyId}`);
+}
+
+export async function deleteInterviewLog(
+  companyId: string,
+  formData: FormData,
+) {
+  const interviewLogId = toNullableString(formData.get("interviewLogId"));
+
+  if (!interviewLogId) {
+    return;
+  }
+
+  const { prisma } = await import("@/lib/prisma");
+  const result = await prisma.interviewLog.deleteMany({
+    where: {
+      id: interviewLogId,
+      companyId,
+      company: {
+        userId: demoUserId,
+      },
+    },
+  });
+
+  if (result.count === 0) {
+    notFound();
+  }
+
+  revalidatePath("/companies");
+  revalidatePath(`/companies/${companyId}`);
+  redirect(`/companies/${companyId}`);
+}
+
 export async function toggleTaskCompletion(
   companyId: string,
   formData: FormData,

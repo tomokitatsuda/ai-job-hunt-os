@@ -1,4 +1,6 @@
-import { createInterviewLog } from "../actions";
+import Link from "next/link";
+
+import { createInterviewLog, deleteInterviewLog } from "../actions";
 
 type InterviewLog = {
   id: string;
@@ -26,6 +28,10 @@ export function InterviewLogSection({
   interviewLogs,
 }: InterviewLogSectionProps) {
   const createInterviewLogForCompany = createInterviewLog.bind(
+    null,
+    companyId,
+  );
+  const deleteInterviewLogForCompany = deleteInterviewLog.bind(
     null,
     companyId,
   );
@@ -167,6 +173,27 @@ export function InterviewLogSection({
                   </dd>
                 </div>
               </dl>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <Link
+                  href={`/companies/${companyId}/interview-logs/${interviewLog.id}/edit`}
+                  className="inline-flex items-center justify-center rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-800 shadow-sm hover:bg-slate-100"
+                >
+                  編集
+                </Link>
+                <form action={deleteInterviewLogForCompany}>
+                  <input
+                    type="hidden"
+                    name="interviewLogId"
+                    value={interviewLog.id}
+                  />
+                  <button
+                    type="submit"
+                    className="inline-flex items-center justify-center rounded-md border border-rose-200 bg-white px-3 py-2 text-sm font-semibold text-rose-700 shadow-sm hover:bg-rose-50"
+                  >
+                    削除
+                  </button>
+                </form>
+              </div>
             </article>
           ))}
         </div>
