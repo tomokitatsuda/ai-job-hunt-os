@@ -177,6 +177,12 @@ export default async function Home() {
                 企業一覧
               </Link>
               <Link
+                href="/tasks"
+                className="inline-flex items-center justify-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 shadow-sm hover:bg-slate-100"
+              >
+                タスク一覧を見る
+              </Link>
+              <Link
                 href="/companies/new"
                 className="inline-flex items-center justify-center rounded-md bg-slate-950 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-slate-800"
               >
