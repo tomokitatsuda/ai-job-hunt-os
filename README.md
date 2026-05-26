@@ -36,12 +36,13 @@ AI Job Hunt OS では、就活に必要な情報を Company を中心に整理�
 - Task 一覧画面での完了 / 未完了切り替え
 - Task 一覧画面での関連 Company へのリンク表示
 - Task 一覧画面での一般 Task 作成
+- Task 一覧画面からの Task 編集・削除
 - Company 詳細画面内での InterviewLog 表示・作成・編集・削除
 - Prisma + PostgreSQL による DB 保存
 - Docker Compose によるローカル PostgreSQL 起動
 - seed による demo user とサンプルデータ投入
 
-Task は Company 詳細画面内で作成・編集・削除でき、Task 一覧画面では demo user の全 Task を未完了 / 完了に分けて確認し、完了状態を切り替えられます。また、Task 一覧画面から Company に紐づかない一般 Task を作成できます。Task 一覧画面からの編集・削除、InterviewLog 一覧画面は、実装済みとは扱っていません。
+Task は Company 詳細画面内で作成・編集・削除でき、Task 一覧画面では demo user の全 Task を未完了 / 完了に分けて確認し、完了状態を切り替えられます。また、Task 一覧画面から Company に紐づかない一般 Task を作成できます。Task 一覧画面では、Company 紐づき Task と一般 Task の違いを確認しながら、title、memo / description、dueDate の編集と削除ができます。Task の Company 紐づけ変更、Company 選択つき Task 作成、InterviewLog 一覧画面は、実装済みとは扱っていません。
 
 ## スクリーンショット
 
@@ -50,6 +51,7 @@ Task は Company 詳細画面内で作成・編集・削除でき、Task 一覧�
 ![Dashboard screenshot](docs/assets/screenshots/dashboard.png)
 
 DB に保存された demo user の応募状況を集計して、応募企業数、未完了 Task 数、直近の Task 締切、直近の面接日などを確認できる画面です。選考ステータス別件数や直近の Task / InterviewLog も、この画面から把握できます。
+Dashboard には「企業を見る」「タスクを見る」「企業を追加」「一般タスクを追加」の導線を置いています。
 
 ### Company 一覧
 
@@ -63,16 +65,22 @@ DB に保存された demo user の応募状況を集計して、応募企業数
 
 Company の基本情報と、その Company に紐づく Task / InterviewLog をまとめて確認・更新できる画面です。Task の作成・完了切り替え・編集・削除、InterviewLog の表示・作成・編集・削除は、この詳細画面内で扱います。
 
+### Task 一覧
+
+![Task list screenshot](docs/assets/screenshots/tasks.png)
+
+demo user の全 Task を未完了 / 完了に分けて確認できる画面です。Company に紐づく Task は関連 Company へのリンクを表示し、Company に紐づかない一般 Task は一般 Task として表示します。この画面から一般 Task の作成、Task の完了/未完了切り替え、編集、削除ができます。
+
 ## 現在未実装の機能
 
 - 認証
 - ユーザー登録・ログイン
 - ログインユーザーごとのデータ分離
 - AI 機能
-- `/tasks/[taskId]/edit`
-- Task 一覧画面からの Task 削除
+- Task の Company 紐づけ変更
+- Company 選択つき Task 作成
 - InterviewLog 一覧画面
-- 検索・フィルター
+- 検索・フィルター・ソート UI
 - デプロイ
 - 本格的なテスト整備
 
@@ -84,7 +92,7 @@ Company を中心に Task と InterviewLog を紐づけています。就活で�
 
 また、最初から認証や AI まで広げず、モックで情報設計を確認した後に Prisma + PostgreSQL へ移行しています。これにより、応募管理の中心データと CRUD の流れを先に固めています。
 
-Company 削除時は物理削除です。紐づく InterviewLog は削除し、Task は `companyId` を `null` にして一般タスクとして残す設計にしています。Task 一覧画面から作成する一般 Task も `companyId: null` として保存します。
+Company 削除時は物理削除です。紐づく InterviewLog は削除し、Task は `companyId` を `null` にして一般タスクとして残す設計にしています。Task 一覧画面から作成する一般 Task も `companyId: null` として保存し、Company 紐づき Task と同じ `Task` モデルで扱います。
 
 DB 接続は Prisma 7 前提の構成です。`DATABASE_URL` は `prisma.config.ts` と `.env` で扱い、`schema.prisma` の `datasource` には `url = env("DATABASE_URL")` を書かない方針にしています。`.env.local` はローカル上書き用に使えますが、基本セットアップは `.env.example` を `.env` にコピーする手順にしています。アプリ側では `src/lib/prisma.ts` で `@prisma/adapter-pg` を使って Prisma Client を生成しています。
 
@@ -134,12 +142,13 @@ AI 機能はまだ未実装です。将来的には、蓄積した Company / Tas
 ## 今後の予定
 
 1. README / docs の継続整備
-2. Task 一覧画面からの編集・削除、InterviewLog 一覧画面の検討
-3. 検索・フィルターの追加
-4. 認証の追加
-5. ログインユーザーごとのデータ取得への切り替え
-6. 本格的なテスト整備
-7. デプロイ
-8. AI 機能の段階的な追加
+2. Task の Company 紐づけ変更、Company 選択つき Task 作成の検討
+3. InterviewLog 一覧画面の検討
+4. 検索・フィルター・ソート UI の追加
+5. 認証の追加
+6. ログインユーザーごとのデータ取得への切り替え
+7. 本格的なテスト整備
+8. デプロイ
+9. AI 機能の段階的な追加
 
 詳細な設計方針は [docs/00-project-overview.md](docs/00-project-overview.md)、現在の実装状況は [docs/02-mvp-implementation-status.md](docs/02-mvp-implementation-status.md) にまとめています。
