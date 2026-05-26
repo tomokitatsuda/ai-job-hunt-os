@@ -31,6 +31,26 @@ AI Job Hunt OS では、就活に必要な情報を Company を中心に整理�
 
 Task と InterviewLog は、現時点では Company 詳細画面内で扱う最小構成です。Task 一覧画面、一般 Task 作成画面、InterviewLog 一覧画面は、実装済みとは扱っていません。
 
+## スクリーンショット
+
+### Dashboard
+
+![Dashboard screenshot](docs/assets/screenshots/dashboard.png)
+
+DB に保存された demo user の応募状況を集計して、応募企業数、未完了 Task 数、直近の Task 締切、直近の面接日などを確認できる画面です。選考ステータス別件数や直近の Task / InterviewLog も、この画面から把握できます。
+
+### Company 一覧
+
+![Company list screenshot](docs/assets/screenshots/companies.png)
+
+登録済み Company の一覧を確認し、詳細画面への移動や Company の新規作成につなげる画面です。現在のローカル MVP では、demo user 固定のデータを表示します。
+
+### Company 詳細
+
+![Company detail screenshot](docs/assets/screenshots/company-detail.png)
+
+Company の基本情報と、その Company に紐づく Task / InterviewLog をまとめて確認・更新できる画面です。Task の作成・完了切り替え・編集・削除、InterviewLog の表示・作成・編集・削除は、この詳細画面内で扱います。
+
 ## 現在未実装の機能
 
 - 認証
@@ -54,9 +74,11 @@ Company を中心に Task と InterviewLog を紐づけています。就活で�
 
 Company 削除時は物理削除です。紐づく InterviewLog は削除し、Task は `companyId` を `null` にして一般タスクとして残す設計にしています。
 
+DB 接続は Prisma 7 前提の構成です。`DATABASE_URL` は `prisma.config.ts` と `.env` で扱い、`schema.prisma` の `datasource` には `url = env("DATABASE_URL")` を書かない方針にしています。アプリ側では `src/lib/prisma.ts` で `@prisma/adapter-pg` を使って Prisma Client を生成しています。
+
 ## 技術スタック
 
-- Next.js 16
+- Next.js 16 App Router
 - React 19
 - TypeScript
 - Tailwind CSS
@@ -79,6 +101,12 @@ npm run dev
 ```
 
 開発サーバー起動後、ブラウザで `http://localhost:3000` を開くと Dashboard を確認できます。
+
+## AI 活用方針
+
+AI 機能はまだ未実装です。将来的には、蓄積した Company / Task / InterviewLog をもとに、面接準備、振り返り整理、次アクション提案などを補助する機能を検討します。
+
+ただし、就活データには個人情報や応募先情報が含まれるため、AI API に渡すデータ範囲、ログ保存、認証導入後のユーザー分離を整理してから実装する方針です。
 
 ## 今後の予定
 
