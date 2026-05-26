@@ -54,9 +54,25 @@ demo user に紐づく Company を新規作成できます。
 
 demo user に紐づく Company の内容を編集できます。
 
+### `/companies/[id]/tasks/[taskId]/edit`
+
+Company 詳細画面から遷移する Task 編集画面です。
+
+demo user に紐づく Task の内容を編集できます。Task 一覧画面や一般 Task 作成画面とは別で、現在は Company 詳細画面内の操作を補完する画面として扱います。
+
+### `/companies/[id]/interview-logs/[interviewLogId]/edit`
+
+Company 詳細画面から遷移する InterviewLog 編集画面です。
+
+対象 Company に紐づく InterviewLog の内容を編集できます。企業をまたいだ InterviewLog 一覧画面はまだ実装していません。
+
 ## 2. 現在の DB 構成
 
 Prisma 7 を導入し、ローカル開発では Docker Compose で PostgreSQL を起動できる構成にしています。
+
+`DATABASE_URL` は `.env` と `prisma.config.ts` で扱っています。Prisma 7 前提のため、`schema.prisma` の `datasource` には `url = env("DATABASE_URL")` を書かず、`provider = "postgresql"` のみを定義しています。
+
+アプリ側の Prisma Client は `src/lib/prisma.ts` で生成し、`@prisma/adapter-pg` を使って PostgreSQL に接続しています。
 
 初回 migration は作成済みです。また、seed により demo user と、Company / Task / InterviewLog のサンプルデータを投入できる状態にしています。
 
@@ -70,7 +86,21 @@ Prisma 7 を導入し、ローカル開発では Docker Compose で PostgreSQL �
 
 現時点では認証をまだ実装していないため、ログインユーザーごとのデータ取得ではなく、demo user 固定で DB を読み書きしています。
 
-## 3. 初期モックデータ構成
+## 3. 現在の技術スタック
+
+- Next.js App Router
+- React
+- TypeScript
+- Tailwind CSS
+- Prisma 7
+- PostgreSQL
+- Docker Compose
+- `@prisma/adapter-pg`
+- ESLint
+
+認証、AI API、デプロイ環境、本格的なテスト基盤はまだ導入していません。
+
+## 4. 初期モックデータ構成
 
 以下の `src/lib/mock-*` は、初期モック実装時のデータ定義として残っています。
 
@@ -129,7 +159,7 @@ Prisma 7 を導入し、ローカル開発では Docker Compose で PostgreSQL �
 
 また、企業 ID から面接ログを取得する `getInterviewLogsByCompanyId` も定義しています。
 
-## 4. 現在できること
+## 5. 現在できること
 
 現在の DB 操作段階では、以下のことができます。
 
@@ -155,12 +185,13 @@ Prisma 7 を導入し、ローカル開発では Docker Compose で PostgreSQL �
 
 Task と InterviewLog は、まず企業詳細画面内で表示・作成・更新・削除できる最小構成にしています。
 
-## 5. まだ実装していないこと
+## 6. まだ実装していないこと
 
 以下はまだ実装していません。
 
 - 認証
 - ユーザー登録・ログイン
+- ログインユーザーごとのデータ分離
 - AI 機能
 - 検索・フィルター
 - Task 一覧画面
@@ -171,7 +202,7 @@ Task と InterviewLog は、まず企業詳細画面内で表示・作成・更�
 
 この段階では、完成済みのアプリとしてではなく、モック MVP から DB 操作へ移行した途中段階として扱います。
 
-## 6. 現在の設計意図
+## 7. 現在の設計意図
 
 AI Job Hunt OS では、Company を中心に Task と InterviewLog を紐づける設計にしています。
 
@@ -195,10 +226,11 @@ Company に紐づく InterviewLog は削除します。一方で、Company に�
 
 論理削除、監査ログ、削除確認の強化、復元機能、バックアップや保持期間との整合性、外部サービスやファイル削除との連携は、今後の検討事項とします。
 
-## 7. 次に進む候補
+## 8. 次に進む候補
 
 次に進む候補は以下です。
 
+- README / docs の継続整備
 - Task 一覧画面、一般 Task 作成画面、InterviewLog 一覧画面の検討
 - 検索・フィルター
 - 認証
@@ -207,7 +239,7 @@ Company に紐づく InterviewLog は削除します。一方で、Company に�
 - デプロイ
 - AI 機能
 
-## 8. 面接で説明できるポイント
+## 9. 面接で説明できるポイント
 
 この段階で説明できるポイントは以下です。
 
