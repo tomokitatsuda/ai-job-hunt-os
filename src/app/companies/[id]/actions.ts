@@ -127,6 +127,65 @@ export async function createTask(companyId: string, formData: FormData) {
   redirect(`/companies/${companyId}`);
 }
 
+export async function updateTask(
+  companyId: string,
+  taskId: string,
+  formData: FormData,
+) {
+  const title = toNullableString(formData.get("title"));
+
+  if (!title) {
+    return;
+  }
+
+  const { prisma } = await import("@/lib/prisma");
+  const result = await prisma.task.updateMany({
+    where: {
+      id: taskId,
+      userId: demoUserId,
+      companyId,
+    },
+    data: {
+      title,
+      dueDate: parseTaskDueDate(formData.get("dueDate")),
+      memo: toNullableString(formData.get("description")),
+    },
+  });
+
+  if (result.count === 0) {
+    notFound();
+  }
+
+  revalidatePath("/companies");
+  revalidatePath(`/companies/${companyId}`);
+  redirect(`/companies/${companyId}`);
+}
+
+export async function deleteTask(companyId: string, formData: FormData) {
+  const taskId = toNullableString(formData.get("taskId"));
+
+  if (!taskId) {
+    return;
+  }
+
+  const { prisma } = await import("@/lib/prisma");
+  const result = await prisma.task.deleteMany({
+    where: {
+      id: taskId,
+      userId: demoUserId,
+      companyId,
+    },
+  });
+
+  if (result.count === 0) {
+    notFound();
+  }
+
+  revalidatePath("/companies");
+  revalidatePath(`/companies/${companyId}`);
+  redirect(`/companies/${companyId}`);
+}
+
 export async function createInterviewLog(
   companyId: string,
   formData: FormData,

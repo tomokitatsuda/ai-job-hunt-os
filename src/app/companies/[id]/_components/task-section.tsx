@@ -1,4 +1,6 @@
-import { createTask, toggleTaskCompletion } from "../actions";
+import Link from "next/link";
+
+import { createTask, deleteTask, toggleTaskCompletion } from "../actions";
 
 type PriorityLabel = "高" | "中" | "低";
 
@@ -55,6 +57,7 @@ export function TaskSection({
     null,
     companyId,
   );
+  const deleteTaskForCompany = deleteTask.bind(null, companyId);
 
   return (
     <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
@@ -162,15 +165,32 @@ export function TaskSection({
                     </dd>
                   </div>
                 </dl>
-                <form action={toggleTaskCompletionForCompany} className="mt-4">
-                  <input type="hidden" name="taskId" value={task.id} />
-                  <button
-                    type="submit"
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <form action={toggleTaskCompletionForCompany}>
+                    <input type="hidden" name="taskId" value={task.id} />
+                    <button
+                      type="submit"
+                      className="inline-flex items-center justify-center rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-800 shadow-sm hover:bg-slate-100"
+                    >
+                      {task.isCompleted ? "未完了に戻す" : "完了にする"}
+                    </button>
+                  </form>
+                  <Link
+                    href={`/companies/${companyId}/tasks/${task.id}/edit`}
                     className="inline-flex items-center justify-center rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-800 shadow-sm hover:bg-slate-100"
                   >
-                    {task.isCompleted ? "未完了に戻す" : "完了にする"}
-                  </button>
-                </form>
+                    編集
+                  </Link>
+                  <form action={deleteTaskForCompany}>
+                    <input type="hidden" name="taskId" value={task.id} />
+                    <button
+                      type="submit"
+                      className="inline-flex items-center justify-center rounded-md border border-rose-200 bg-white px-3 py-2 text-sm font-semibold text-rose-700 shadow-sm hover:bg-rose-50"
+                    >
+                      削除
+                    </button>
+                  </form>
+                </div>
               </article>
             );
           })}
