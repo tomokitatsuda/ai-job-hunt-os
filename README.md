@@ -81,7 +81,7 @@ Company を中心に Task と InterviewLog を紐づけています。就活で�
 
 Company 削除時は物理削除です。紐づく InterviewLog は削除し、Task は `companyId` を `null` にして一般タスクとして残す設計にしています。
 
-DB 接続は Prisma 7 前提の構成です。`DATABASE_URL` は `prisma.config.ts` と `.env` で扱い、`schema.prisma` の `datasource` には `url = env("DATABASE_URL")` を書かない方針にしています。アプリ側では `src/lib/prisma.ts` で `@prisma/adapter-pg` を使って Prisma Client を生成しています。
+DB 接続は Prisma 7 前提の構成です。`DATABASE_URL` は `prisma.config.ts` と `.env` で扱い、`schema.prisma` の `datasource` には `url = env("DATABASE_URL")` を書かない方針にしています。`.env.local` はローカル上書き用に使えますが、基本セットアップは `.env.example` を `.env` にコピーする手順にしています。アプリ側では `src/lib/prisma.ts` で `@prisma/adapter-pg` を使って Prisma Client を生成しています。
 
 ## 技術スタック
 
@@ -108,7 +108,7 @@ DB 接続は Prisma 7 前提の構成です。`DATABASE_URL` は `prisma.config.
 
 ```bash
 npm install
-cp .env.example .env.local
+cp .env.example .env
 docker compose up -d
 npx prisma generate
 npx prisma migrate dev
@@ -118,7 +118,7 @@ npm run dev
 
 開発サーバー起動後、ブラウザで `http://localhost:3000` を開くと Dashboard を確認できます。
 
-詳しい手順や確認コマンドは [docs/setup.md](docs/setup.md) を参照してください。実際の `.env` / `.env.local` や `DATABASE_URL` は commit しないでください。
+詳しい手順や確認コマンドは [docs/setup.md](docs/setup.md) を参照してください。`.env.example` の `DATABASE_URL` はローカル開発用 Docker 環境のサンプルです。実際の `.env` / `.env.local`、本番 DB や個人用 DB の接続情報、API キー、個人情報は commit しないでください。
 
 ## AI 活用方針
 

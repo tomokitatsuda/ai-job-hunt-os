@@ -30,15 +30,15 @@ npm install
 
 このプロジェクトでは、Next.js App Router、TypeScript、Tailwind CSS、Prisma 7、PostgreSQL 関連のパッケージを使います。
 
-## 3. `.env.local` を用意する
+## 3. `.env` を用意する
 
-`.env.example` が用意されているため、ローカル用の環境変数ファイルを作成します。
+`.env.example` が用意されているため、ローカル用の環境変数ファイルを作成します。Prisma CLI は `prisma.config.ts` の `dotenv/config` 経由で `.env` を読みます。
 
 ```bash
-cp .env.example .env.local
+cp .env.example .env
 ```
 
-`.env.local` には、ローカル開発用の `DATABASE_URL` や Docker Compose 用の PostgreSQL 設定を入れます。
+`.env` には、ローカル開発用の `DATABASE_URL` や Docker Compose 用の PostgreSQL 設定を入れます。
 
 ```env
 DATABASE_URL="postgresql://postgres:postgres@localhost:5432/ai_job_hunt_os?schema=public"
@@ -47,7 +47,9 @@ POSTGRES_PASSWORD="postgres"
 POSTGRES_DB="ai_job_hunt_os"
 ```
 
-実際の `.env`、`.env.local`、`DATABASE_URL`、API キー、個人情報は commit しないでください。このリポジトリでは `.env.example` だけを共有用のサンプルとして commit します。
+この `DATABASE_URL` は、Docker Compose で起動するローカル開発用 PostgreSQL への接続サンプルです。本番 DB や個人用 DB の接続情報、API キー、個人情報は記載・commit しないでください。このリポジトリでは `.env.example` だけを共有用のサンプルとして commit します。
+
+Next.js 側だけでローカル設定を上書きしたい場合は `.env.local` も使えます。ただし、Prisma CLI との説明をそろえるため、基本セットアップでは `.env` を使います。
 
 補足: 現在の `prisma.config.ts` は Prisma 7 前提で `DATABASE_URL` を扱います。`schema.prisma` の `datasource` には `url = env("DATABASE_URL")` を書かない構成です。
 
@@ -135,11 +137,19 @@ Lint を実行します。
 npm run lint
 ```
 
+公開前の最小確認として、以下を実行します。
+
+```bash
+npm run lint
+npx prisma validate
+npm run build
+```
+
 ## 注意事項
 
 - 認証はまだ未実装です。
 - 現在は `demo-user` 固定で DB を読み書きします。
 - AI 機能はまだ未実装です。
 - デプロイ手順はまだ整備していません。
-- `.env`、`.env.local`、実際の `DATABASE_URL`、API キー、個人情報は commit しないでください。
+- `.env`、`.env.local`、本番 DB や個人用 DB の `DATABASE_URL`、API キー、個人情報は commit しないでください。
 - `.env.example` は既に存在します。現時点では新規作成は不要です。
