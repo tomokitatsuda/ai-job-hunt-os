@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { connection } from "next/server";
 
-import { toggleTaskCompletionFromTaskList } from "./actions";
+import { createGeneralTask, toggleTaskCompletionFromTaskList } from "./actions";
 
 const demoUserId = "demo-user";
 
@@ -96,7 +96,7 @@ function TaskListSection({
                         {task.company.name}
                       </Link>
                     ) : (
-                      "企業未設定"
+                      "関連企業なし"
                     )}
                   </dd>
                 </div>
@@ -183,7 +183,7 @@ export default async function TasksPage() {
                 Task一覧
               </h1>
               <p className="mt-2 text-sm leading-6 text-slate-600">
-                Companyに紐づくTaskを横断して確認できます。
+                Companyに紐づくTaskと一般Taskを横断して確認できます。
               </p>
             </div>
             <div className="flex flex-col gap-3 sm:items-end">
@@ -203,11 +203,60 @@ export default async function TasksPage() {
           </div>
         </header>
 
+        <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="text-base font-semibold text-slate-950">
+              一般タスクを追加
+            </h2>
+          </div>
+          <form
+            action={createGeneralTask}
+            className="mt-4 rounded-md border border-slate-200 bg-slate-50 p-4"
+          >
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label className="flex flex-col gap-2 sm:col-span-2">
+                <span className="text-sm font-medium text-slate-700">
+                  タスク名 <span className="text-rose-600">*</span>
+                </span>
+                <input
+                  name="title"
+                  required
+                  className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+                />
+              </label>
+              <label className="flex flex-col gap-2">
+                <span className="text-sm font-medium text-slate-700">期限</span>
+                <input
+                  name="dueDate"
+                  type="date"
+                  className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+                />
+              </label>
+              <label className="flex flex-col gap-2 sm:col-span-2">
+                <span className="text-sm font-medium text-slate-700">メモ</span>
+                <textarea
+                  name="memo"
+                  rows={3}
+                  className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+                />
+              </label>
+            </div>
+            <div className="mt-4 flex justify-end">
+              <button
+                type="submit"
+                className="inline-flex items-center justify-center rounded-md bg-slate-950 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-slate-800"
+              >
+                一般タスクを追加
+              </button>
+            </div>
+          </form>
+        </section>
+
         <div className="grid gap-4 lg:grid-cols-2">
           <TaskListSection
             title="未完了Task"
             emptyTitle="未完了Taskはありません"
-            emptyDescription="Company詳細でTaskを追加すると、ここに表示されます。"
+            emptyDescription="一般TaskまたはCompany詳細のTaskを追加すると、ここに表示されます。"
             tasks={incompleteTasks}
           />
           <TaskListSection
