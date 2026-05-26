@@ -174,19 +174,25 @@ export default async function Home() {
                 href="/companies"
                 className="inline-flex items-center justify-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 shadow-sm hover:bg-slate-100"
               >
-                企業一覧
+                企業を見る
               </Link>
               <Link
                 href="/tasks"
                 className="inline-flex items-center justify-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 shadow-sm hover:bg-slate-100"
               >
-                タスク一覧を見る
+                タスクを見る
               </Link>
               <Link
                 href="/companies/new"
                 className="inline-flex items-center justify-center rounded-md bg-slate-950 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-slate-800"
               >
                 企業を追加
+              </Link>
+              <Link
+                href="/tasks"
+                className="inline-flex items-center justify-center rounded-md bg-slate-950 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-slate-800"
+              >
+                一般タスクを追加
               </Link>
             </div>
           </div>
@@ -342,7 +348,7 @@ export default async function Home() {
                               {task.company.name}
                             </Link>
                           ) : (
-                            "企業未設定"
+                            "一般タスク（関連企業なし）"
                           )}
                         </p>
                       </div>

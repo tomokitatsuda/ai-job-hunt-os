@@ -62,6 +62,9 @@ function TaskListSection({
                   <h3 className="text-sm font-semibold text-slate-900">
                     {task.title}
                   </h3>
+                  <span className="mt-2 inline-flex w-fit rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-slate-700 ring-1 ring-inset ring-slate-200">
+                    {task.company ? "企業紐づきタスク" : "一般タスク"}
+                  </span>
                   <p className="mt-2 text-sm leading-6 text-slate-600">
                     {formatText(task.memo)}
                   </p>
@@ -90,7 +93,7 @@ function TaskListSection({
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-slate-500">関連Company</dt>
+                  <dt className="text-slate-500">関連企業</dt>
                   <dd className="mt-1 font-medium text-slate-900">
                     {task.company ? (
                       <Link
@@ -120,7 +123,7 @@ function TaskListSection({
                     href={`/companies/${task.company.id}`}
                     className="inline-flex items-center justify-center rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-800 shadow-sm hover:bg-slate-100"
                   >
-                    Company詳細
+                    企業詳細
                   </Link>
                 ) : null}
                 <Link
@@ -202,7 +205,7 @@ export default async function TasksPage() {
                 Task一覧
               </h1>
               <p className="mt-2 text-sm leading-6 text-slate-600">
-                Companyに紐づくTaskと一般Taskを横断して確認できます。
+                企業に紐づくタスクと一般タスクを横断して確認できます。
               </p>
             </div>
             <div className="flex flex-col gap-3 sm:items-end">
@@ -212,8 +215,14 @@ export default async function TasksPage() {
               >
                 ダッシュボードへ戻る
               </Link>
+              <Link
+                href="/companies"
+                className="text-sm font-medium text-slate-600 underline-offset-4 hover:text-slate-900 hover:underline"
+              >
+                企業を見る
+              </Link>
               <div className="text-sm text-slate-500">
-                登録Task数:{" "}
+                登録タスク数:{" "}
                 <span className="font-semibold text-slate-900">
                   {tasks.length}
                 </span>
@@ -224,9 +233,15 @@ export default async function TasksPage() {
 
         <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
           <div className="flex items-center justify-between gap-3">
-            <h2 className="text-base font-semibold text-slate-950">
-              一般タスクを追加
-            </h2>
+            <div>
+              <h2 className="text-base font-semibold text-slate-950">
+                一般タスクを追加
+              </h2>
+              <p className="mt-2 text-sm leading-6 text-slate-600">
+                特定の企業に紐づかない就活タスクを追加します。
+                企業に紐づくタスクは各企業詳細ページから追加してください。
+              </p>
+            </div>
           </div>
           <form
             action={createGeneralTask}
@@ -273,15 +288,15 @@ export default async function TasksPage() {
 
         <div className="grid gap-4 lg:grid-cols-2">
           <TaskListSection
-            title="未完了Task"
-            emptyTitle="未完了Taskはありません"
-            emptyDescription="一般TaskまたはCompany詳細のTaskを追加すると、ここに表示されます。"
+            title="未完了タスク"
+            emptyTitle="未完了タスクはありません"
+            emptyDescription="一般タスクまたは企業詳細のタスクを追加すると、ここに表示されます。"
             tasks={incompleteTasks}
           />
           <TaskListSection
-            title="完了Task"
-            emptyTitle="完了Taskはありません"
-            emptyDescription="完了にしたTaskがここに表示されます。"
+            title="完了タスク"
+            emptyTitle="完了タスクはありません"
+            emptyDescription="完了にしたタスクがここに表示されます。"
             tasks={completedTasks}
           />
         </div>
