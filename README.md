@@ -1,100 +1,94 @@
 # AI Job Hunt OS
 
-AI Job Hunt OS は、就職活動の応募状況、選考予定、タスク、振り返りを一元管理するための Web アプリです。
+AI Job Hunt OS は、就職活動の応募状況、選考予定、タスク、面接ログを一元管理するための Web アプリです。
 
-現在は実装前の設計整理フェーズです。まずは README と設計ドキュメントで、作るものの範囲と開発方針を明確にしています。
+現在は、認証を入れる前のローカル MVP として、demo user 固定で PostgreSQL にデータを保存しながら Company / Task / InterviewLog を扱える段階です。
 
 ## 概要
 
-就職活動では、応募先ごとの選考ステータス、面接日程、提出書類、次にやることが複数のツールに分散しがちです。
+就職活動では、応募先ごとの選考ステータス、面接日程、提出書類、次にやること、面接後の振り返りが複数のツールに分散しがちです。
 
-AI Job Hunt OS では、就活に必要な情報を一つの画面で管理し、後から AI を活用して自己分析や応募書類の改善にもつなげられる状態を目指します。
+AI Job Hunt OS では、就活に必要な情報を Company を中心に整理し、後から認証や AI 機能を追加できる土台を作ることを目指しています。
 
-## 制作背景
+## 現在実装済みの機能
 
-このプロジェクトは、単なる CRUD アプリではなく、「課題を整理し、MVP を決め、段階的に実装するプロセス」を見せるために作成しています。
+- Dashboard で DB 集計を表示
+  - 応募企業数
+  - 未完了 Task 数
+  - 直近の Task 締切
+  - 直近の面接日
+  - 選考ステータス別件数
+  - 志望度の高い Company
+  - 直近の Task / InterviewLog
+- Company 一覧表示
+- Company 詳細表示
+- Company 作成・編集・削除
+- Company 詳細画面内での Task 表示・作成・完了切り替え・編集・削除
+- Company 詳細画面内での InterviewLog 表示・作成・編集・削除
+- Prisma + PostgreSQL による DB 保存
+- Docker Compose によるローカル PostgreSQL 起動
+- seed による demo user とサンプルデータ投入
 
-就活では、情報量が増えるほど管理が難しくなります。そこで、まずは応募管理の基本機能に絞り、あとから認証、データベース、AI 機能を追加できるように設計します。
+Task と InterviewLog は、現時点では Company 詳細画面内で扱う最小構成です。Task 一覧画面、一般 Task 作成画面、InterviewLog 一覧画面は、実装済みとは扱っていません。
 
-## 現在の開発ステータス
+## 現在未実装の機能
 
-- Next.js アプリの初期構成を作成済み
-- README と設計ドキュメントを整備中
-- アプリ固有の UI、DB、認証、AI 機能は未実装
-- 実装前に MVP の範囲と優先順位を整理している段階
+- 認証
+- ユーザー登録・ログイン
+- ログインユーザーごとのデータ分離
+- AI 機能
+- Task 一覧画面
+- 一般 Task 作成画面
+- InterviewLog 一覧画面
+- 検索・フィルター
+- デプロイ
+- 本格的なテスト整備
 
-## MVP で作る機能
+現在は `demo-user` 固定で DB を読み書きしています。
 
-v1.0 MVP では、まずモックデータで画面と情報設計を固め、その後 DB 保存と CRUD に進みながら、以下の機能を実装予定です。
+## 設計上の工夫
 
-- 応募先企業の管理
-- 応募先ごとの選考ステータス管理
-- 面接日程や締切の管理
-- 次にやるタスクの管理
-- 応募メモ、面接ログ、振り返り、志望度の記録
-- ダッシュボードで全体状況を確認する画面
-- PostgreSQL へのデータ保存
-- Prisma を使った基本的な CRUD
+Company を中心に Task と InterviewLog を紐づけています。就活では企業ごとに選考ステータス、次のアクション、準備タスク、面接ログが発生するため、まず Company 詳細画面で関連情報をまとめて確認・更新できる構成にしています。
 
-## 現在の初期フェーズではまだ作らない機能
+また、最初から認証や AI まで広げず、モックで情報設計を確認した後に Prisma + PostgreSQL へ移行しています。これにより、応募管理の中心データと CRUD の流れを先に固めています。
 
-現在は設計整理フェーズのため、以下はまだ実装しません。ただし、Prisma、PostgreSQL、CRUD は v1.0 MVP から除外するものではなく、画面構成とデータモデルを整理した後に段階的に追加します。
+Company 削除時は物理削除です。紐づく InterviewLog は削除し、Task は `companyId` を `null` にして一般タスクとして残す設計にしています。
 
-- 本番向け認証
-- Prisma 導入
-- 外部データベース接続
-- CRUD 機能
+## 技術スタック
 
-認証は v1.0 後半で追加する候補として扱います。
-
-## v1.0 MVP ではまだ作らない機能
-
-以下は v1.0 MVP では実装せず、後続フェーズで検討します。
-
-- AI による応募書類生成
-- AI による面接対策
-- 実在企業 API との連携
-- 複数ユーザー向けの共有機能
-- 高度な分析グラフ
-
-## 使用予定技術
-
-現時点での予定技術は以下です。実装の進行に合わせて見直します。
-
-- Next.js
-- React
+- Next.js 16
+- React 19
 - TypeScript
 - Tailwind CSS
-- ESLint
-- Prisma
+- Prisma 7
 - PostgreSQL
-- 認証ライブラリ
-- OpenAI API などの AI API
+- Docker Compose
+- ESLint
 
-現時点で導入済みなのは、Next.js、React、TypeScript、Tailwind CSS、ESLint です。
+今後の候補として、認証には Auth.js / NextAuth、AI 機能には OpenAI API などの利用を想定しています。
 
-## AI 活用方針
+## セットアップ
 
-AI は、アプリの中心機能として段階的に追加する予定です。ただし、最初から AI 機能を実装するのではなく、まずは就活データを整理して蓄積できる土台を作ります。
+```bash
+npm install
+cp .env.example .env
+docker compose up -d
+npx prisma migrate dev
+npx prisma db seed
+npm run dev
+```
 
-想定している AI 活用は以下です。
-
-- 自己 PR や志望動機のたたき台作成
-- 面接後の振り返り整理
-- 応募先ごとの準備タスク提案
-- 過去メモをもとにした面接対策
-
-AI の出力はそのまま使う前提ではなく、ユーザーが判断し、修正して使う補助機能として扱います。
+開発サーバー起動後、ブラウザで `http://localhost:3000` を開くと Dashboard を確認できます。
 
 ## 今後の予定
 
-1. README と設計ドキュメントを整備する
-2. MVP の画面構成を決める
-3. モックデータで応募管理画面を作る
-4. データモデルを設計する
-5. Prisma と DB 接続を追加する
-6. CRUD 機能を実装する
-7. 認証を追加する
-8. AI 機能を段階的に追加する
+1. README / docs の継続整備
+2. Task 一覧画面、一般 Task 作成画面、InterviewLog 一覧画面の検討
+3. 検索・フィルターの追加
+4. 認証の追加
+5. ログインユーザーごとのデータ取得への切り替え
+6. 本格的なテスト整備
+7. デプロイ
+8. AI 機能の段階的な追加
 
-詳細な設計方針は [docs/00-project-overview.md](docs/00-project-overview.md) にまとめています。
+詳細な設計方針は [docs/00-project-overview.md](docs/00-project-overview.md)、現在の実装状況は [docs/02-mvp-implementation-status.md](docs/02-mvp-implementation-status.md) にまとめています。
