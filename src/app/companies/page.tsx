@@ -2,10 +2,9 @@ import Link from "next/link";
 import { connection } from "next/server";
 
 import type { ApplicationStatus } from "@/generated/prisma/client";
+import { getCurrentUserId } from "@/lib/current-user";
 
 type CompanyPriority = "高" | "中" | "低";
-
-const demoUserId = "demo-user";
 
 const statusLabels: Record<ApplicationStatus, string> = {
   NOT_APPLIED: "応募準備",
@@ -45,9 +44,10 @@ export default async function CompaniesPage() {
   await connection();
 
   const { prisma } = await import("@/lib/prisma");
+  const currentUserId = await getCurrentUserId();
   const companies = await prisma.company.findMany({
     where: {
-      userId: demoUserId,
+      userId: currentUserId,
     },
     orderBy: {
       updatedAt: "desc",
@@ -57,6 +57,7 @@ export default async function CompaniesPage() {
         select: {
           tasks: {
             where: {
+              userId: currentUserId,
               isCompleted: false,
             },
           },

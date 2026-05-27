@@ -3,8 +3,7 @@ import { notFound } from "next/navigation";
 import { connection } from "next/server";
 
 import { updateInterviewLog } from "../../../actions";
-
-const demoUserId = "demo-user";
+import { getCurrentUserId } from "@/lib/current-user";
 
 const formatDateInputValue = (date: Date | null) =>
   date ? date.toISOString().slice(0, 10) : "";
@@ -21,12 +20,13 @@ export default async function EditInterviewLogPage({
   await connection();
 
   const { prisma } = await import("@/lib/prisma");
+  const currentUserId = await getCurrentUserId();
   const interviewLog = await prisma.interviewLog.findFirst({
     where: {
       id: interviewLogId,
       companyId: id,
       company: {
-        userId: demoUserId,
+        userId: currentUserId,
       },
     },
     select: {

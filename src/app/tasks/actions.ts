@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { notFound, redirect } from "next/navigation";
 
-const demoUserId = "demo-user";
+import { getCurrentUserId } from "@/lib/current-user";
 
 const toNullableString = (value: FormDataEntryValue | null) => {
   if (typeof value !== "string") {
@@ -33,9 +33,10 @@ export async function createGeneralTask(formData: FormData) {
   }
 
   const { prisma } = await import("@/lib/prisma");
+  const currentUserId = await getCurrentUserId();
   await prisma.task.create({
     data: {
-      userId: demoUserId,
+      userId: currentUserId,
       companyId: null,
       title,
       dueDate: parseTaskDueDate(formData.get("dueDate")),
@@ -56,10 +57,21 @@ export async function toggleTaskCompletionFromTaskList(formData: FormData) {
   }
 
   const { prisma } = await import("@/lib/prisma");
+  const currentUserId = await getCurrentUserId();
   const task = await prisma.task.findFirst({
     where: {
       id: taskId,
-      userId: demoUserId,
+      userId: currentUserId,
+      OR: [
+        {
+          companyId: null,
+        },
+        {
+          company: {
+            userId: currentUserId,
+          },
+        },
+      ],
     },
     select: {
       id: true,
@@ -75,7 +87,17 @@ export async function toggleTaskCompletionFromTaskList(formData: FormData) {
   const result = await prisma.task.updateMany({
     where: {
       id: task.id,
-      userId: demoUserId,
+      userId: currentUserId,
+      OR: [
+        {
+          companyId: null,
+        },
+        {
+          company: {
+            userId: currentUserId,
+          },
+        },
+      ],
     },
     data: {
       isCompleted: !task.isCompleted,
@@ -106,10 +128,21 @@ export async function updateTaskFromTaskList(
   }
 
   const { prisma } = await import("@/lib/prisma");
+  const currentUserId = await getCurrentUserId();
   const task = await prisma.task.findFirst({
     where: {
       id: taskId,
-      userId: demoUserId,
+      userId: currentUserId,
+      OR: [
+        {
+          companyId: null,
+        },
+        {
+          company: {
+            userId: currentUserId,
+          },
+        },
+      ],
     },
     select: {
       id: true,
@@ -124,7 +157,17 @@ export async function updateTaskFromTaskList(
   const result = await prisma.task.updateMany({
     where: {
       id: task.id,
-      userId: demoUserId,
+      userId: currentUserId,
+      OR: [
+        {
+          companyId: null,
+        },
+        {
+          company: {
+            userId: currentUserId,
+          },
+        },
+      ],
     },
     data: {
       title,
@@ -156,10 +199,21 @@ export async function deleteTaskFromTaskList(formData: FormData) {
   }
 
   const { prisma } = await import("@/lib/prisma");
+  const currentUserId = await getCurrentUserId();
   const task = await prisma.task.findFirst({
     where: {
       id: taskId,
-      userId: demoUserId,
+      userId: currentUserId,
+      OR: [
+        {
+          companyId: null,
+        },
+        {
+          company: {
+            userId: currentUserId,
+          },
+        },
+      ],
     },
     select: {
       id: true,
@@ -174,7 +228,17 @@ export async function deleteTaskFromTaskList(formData: FormData) {
   const result = await prisma.task.deleteMany({
     where: {
       id: task.id,
-      userId: demoUserId,
+      userId: currentUserId,
+      OR: [
+        {
+          companyId: null,
+        },
+        {
+          company: {
+            userId: currentUserId,
+          },
+        },
+      ],
     },
   });
 

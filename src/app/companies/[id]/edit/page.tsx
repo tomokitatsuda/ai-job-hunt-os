@@ -4,8 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import { connection } from "next/server";
 
 import { ApplicationStatus } from "@/generated/prisma/client";
-
-const demoUserId = "demo-user";
+import { getCurrentUserId } from "@/lib/current-user";
 
 const statusOptions = [
   { value: ApplicationStatus.NOT_APPLIED, label: "未応募" },
@@ -75,10 +74,11 @@ export default async function EditCompanyPage({ params }: EditCompanyPageProps) 
   await connection();
 
   const { prisma } = await import("@/lib/prisma");
+  const currentUserId = await getCurrentUserId();
   const company = await prisma.company.findFirst({
     where: {
       id,
-      userId: demoUserId,
+      userId: currentUserId,
     },
     select: {
       id: true,
@@ -108,10 +108,11 @@ export default async function EditCompanyPage({ params }: EditCompanyPageProps) 
     }
 
     const { prisma } = await import("@/lib/prisma");
+    const currentUserId = await getCurrentUserId();
     const result = await prisma.company.updateMany({
       where: {
         id,
-        userId: demoUserId,
+        userId: currentUserId,
       },
       data: {
         name,

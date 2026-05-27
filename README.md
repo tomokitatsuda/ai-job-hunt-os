@@ -84,13 +84,15 @@ demo user の全 Task を未完了 / 完了に分けて確認できる画面で�
 - デプロイ
 - 本格的なテスト整備
 
-現在は `demo-user` 固定で DB を読み書きしています。
+現在は `src/lib/current-user.ts` の `getCurrentUserId()` が返す `demo-user` 固定で DB を読み書きしています。
 
 ## 設計上の工夫
 
 Company を中心に Task と InterviewLog を紐づけています。就活では企業ごとに選考ステータス、次のアクション、準備タスク、面接ログが発生するため、まず Company 詳細画面で関連情報をまとめて確認・更新できる構成にしています。
 
 また、最初から認証や AI まで広げず、モックで情報設計を確認した後に Prisma + PostgreSQL へ移行しています。これにより、応募管理の中心データと CRUD の流れを先に固めています。
+
+認証導入前の地ならしとして、現在ユーザー ID は `src/lib/current-user.ts` に集約しています。Company / Task は `userId`、InterviewLog は Company 経由で所有者確認する方針です。
 
 Company 削除時は物理削除です。紐づく InterviewLog は削除し、Task は `companyId` を `null` にして一般タスクとして残す設計にしています。Task 一覧画面から作成する一般 Task も `companyId: null` として保存し、Company 紐づき Task と同じ `Task` モデルで扱います。
 

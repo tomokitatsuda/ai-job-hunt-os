@@ -8,7 +8,7 @@
 
 Company は一覧、詳細、作成、編集、削除まで実装済みです。Task は企業詳細画面内で表示・作成・更新・削除でき、Task 一覧画面でも demo user の全 Task を未完了 / 完了に分けて確認できます。また、Task 一覧画面から Company に紐づかない一般 Task を作成し、Task 一覧画面から一般 Task と Company 紐づき Task の編集・削除もできます。InterviewLog は、まず企業詳細画面内で表示・作成・更新・削除できる最小構成にしています。Dashboard では DB 由来の集計を表示できる状態になっています。
 
-ただし、認証、AI 機能、Task の Company 紐づけ変更、Company 選択つき Task 作成、検索・フィルター・ソート UI、InterviewLog 一覧画面はまだ実装していません。現在は demo user 固定で DB を読み書きしています。
+ただし、認証、AI 機能、Task の Company 紐づけ変更、Company 選択つき Task 作成、検索・フィルター・ソート UI、InterviewLog 一覧画面はまだ実装していません。現在は `src/lib/current-user.ts` の `getCurrentUserId()` が返す demo user 固定で DB を読み書きしています。
 
 就活 GitHub として読まれたときに、現在の実装範囲、まだ実装していない範囲、次に進む候補が伝わることを目的にしています。
 
@@ -98,7 +98,7 @@ Prisma 7 を導入し、ローカル開発では Docker Compose で PostgreSQL �
 - `InterviewLog`
 - `ApplicationStatus`
 
-現時点では認証をまだ実装していないため、ログインユーザーごとのデータ取得ではなく、demo user 固定で DB を読み書きしています。
+現時点では認証をまだ実装していないため、ログインユーザーごとのデータ取得ではなく、demo user 固定で DB を読み書きしています。Company / Task は `userId` で絞り、InterviewLog は Company 経由で所有者確認する形に寄せています。
 
 ## 3. 現在の技術スタック
 
@@ -239,7 +239,8 @@ Task と InterviewLog は、まず企業詳細画面内で表示・作成・更�
 
 ### Company 削除について
 
-現時点の Company 削除は物理削除です。削除時には、対象の Company が `userId: "demo-user"` に属していることを確認しています。
+現時点の Company 削除は物理削除です。削除時には、対象の Company が currentUserId に属していることを確認しています。
+現時点では getCurrentUserId() が `demo-user` を返します。
 
 Company に紐づく InterviewLog は削除します。一方で、Company に紐づく Task は削除せず、`companyId` を `null` にして一般タスクとして残します。これらの処理は transaction 内で実行しています。
 

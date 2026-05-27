@@ -6,8 +6,7 @@ import { CompanySummary } from "./_components/company-summary";
 import { DeleteCompanySection } from "./_components/delete-company-section";
 import { InterviewLogSection } from "./_components/interview-log-section";
 import { TaskSection } from "./_components/task-section";
-
-const demoUserId = "demo-user";
+import { getCurrentUserId } from "@/lib/current-user";
 
 const formatDate = (date: Date | null) =>
   date ? date.toISOString().slice(0, 10) : "-";
@@ -26,10 +25,11 @@ export default async function CompanyDetailPage({
   await connection();
 
   const { prisma } = await import("@/lib/prisma");
+  const currentUserId = await getCurrentUserId();
   const company = await prisma.company.findFirst({
     where: {
       id,
-      userId: demoUserId,
+      userId: currentUserId,
     },
     select: {
       id: true,
@@ -42,7 +42,7 @@ export default async function CompanyDetailPage({
       updatedAt: true,
       tasks: {
         where: {
-          userId: demoUserId,
+          userId: currentUserId,
         },
         orderBy: [
           {

@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { notFound, redirect } from "next/navigation";
 
-const demoUserId = "demo-user";
+import { getCurrentUserId } from "@/lib/current-user";
 
 const toNullableString = (value: FormDataEntryValue | null) => {
   if (typeof value !== "string") {
@@ -48,10 +48,11 @@ const parseInterviewDate = (value: FormDataEntryValue | null) => {
 
 export async function deleteCompany(companyId: string) {
   const { prisma } = await import("@/lib/prisma");
+  const currentUserId = await getCurrentUserId();
   const companyToDelete = await prisma.company.findFirst({
     where: {
       id: companyId,
-      userId: demoUserId,
+      userId: currentUserId,
     },
     select: {
       id: true,
@@ -66,20 +67,24 @@ export async function deleteCompany(companyId: string) {
     prisma.interviewLog.deleteMany({
       where: {
         companyId,
+        company: {
+          userId: currentUserId,
+        },
       },
     }),
     prisma.task.updateMany({
       where: {
         companyId,
-        userId: demoUserId,
+        userId: currentUserId,
       },
       data: {
         companyId: null,
       },
     }),
-    prisma.company.delete({
+    prisma.company.deleteMany({
       where: {
         id: companyId,
+        userId: currentUserId,
       },
     }),
   ]);
@@ -97,10 +102,11 @@ export async function createTask(companyId: string, formData: FormData) {
   }
 
   const { prisma } = await import("@/lib/prisma");
+  const currentUserId = await getCurrentUserId();
   const companyForTask = await prisma.company.findFirst({
     where: {
       id: companyId,
-      userId: demoUserId,
+      userId: currentUserId,
     },
     select: {
       id: true,
@@ -113,7 +119,7 @@ export async function createTask(companyId: string, formData: FormData) {
 
   await prisma.task.create({
     data: {
-      userId: demoUserId,
+      userId: currentUserId,
       companyId,
       title,
       dueDate: parseTaskDueDate(formData.get("dueDate")),
@@ -139,11 +145,15 @@ export async function updateTask(
   }
 
   const { prisma } = await import("@/lib/prisma");
+  const currentUserId = await getCurrentUserId();
   const result = await prisma.task.updateMany({
     where: {
       id: taskId,
-      userId: demoUserId,
+      userId: currentUserId,
       companyId,
+      company: {
+        userId: currentUserId,
+      },
     },
     data: {
       title,
@@ -169,11 +179,15 @@ export async function deleteTask(companyId: string, formData: FormData) {
   }
 
   const { prisma } = await import("@/lib/prisma");
+  const currentUserId = await getCurrentUserId();
   const result = await prisma.task.deleteMany({
     where: {
       id: taskId,
-      userId: demoUserId,
+      userId: currentUserId,
       companyId,
+      company: {
+        userId: currentUserId,
+      },
     },
   });
 
@@ -213,10 +227,11 @@ export async function createInterviewLog(
   }
 
   const { prisma } = await import("@/lib/prisma");
+  const currentUserId = await getCurrentUserId();
   const companyForInterviewLog = await prisma.company.findFirst({
     where: {
       id: companyId,
-      userId: demoUserId,
+      userId: currentUserId,
     },
     select: {
       id: true,
@@ -251,12 +266,13 @@ export async function updateInterviewLog(
   formData: FormData,
 ) {
   const { prisma } = await import("@/lib/prisma");
+  const currentUserId = await getCurrentUserId();
   const result = await prisma.interviewLog.updateMany({
     where: {
       id: interviewLogId,
       companyId,
       company: {
-        userId: demoUserId,
+        userId: currentUserId,
       },
     },
     data: {
@@ -292,12 +308,13 @@ export async function deleteInterviewLog(
   }
 
   const { prisma } = await import("@/lib/prisma");
+  const currentUserId = await getCurrentUserId();
   const result = await prisma.interviewLog.deleteMany({
     where: {
       id: interviewLogId,
       companyId,
       company: {
-        userId: demoUserId,
+        userId: currentUserId,
       },
     },
   });
@@ -322,11 +339,15 @@ export async function toggleTaskCompletion(
   }
 
   const { prisma } = await import("@/lib/prisma");
+  const currentUserId = await getCurrentUserId();
   const task = await prisma.task.findFirst({
     where: {
       id: taskId,
-      userId: demoUserId,
+      userId: currentUserId,
       companyId,
+      company: {
+        userId: currentUserId,
+      },
     },
     select: {
       id: true,
@@ -341,8 +362,11 @@ export async function toggleTaskCompletion(
   const result = await prisma.task.updateMany({
     where: {
       id: task.id,
-      userId: demoUserId,
+      userId: currentUserId,
       companyId,
+      company: {
+        userId: currentUserId,
+      },
     },
     data: {
       isCompleted: !task.isCompleted,

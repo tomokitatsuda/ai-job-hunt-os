@@ -2,8 +2,7 @@ import Link from "next/link";
 import { connection } from "next/server";
 
 import { ApplicationStatus } from "@/generated/prisma/client";
-
-const demoUserId = "demo-user";
+import { getCurrentUserId } from "@/lib/current-user";
 
 const statusLabels: Record<ApplicationStatus, string> = {
   NOT_APPLIED: "応募準備",
@@ -50,6 +49,7 @@ export default async function Home() {
   await connection();
 
   const { prisma } = await import("@/lib/prisma");
+  const currentUserId = await getCurrentUserId();
 
   const [
     totalCompanies,
@@ -61,13 +61,13 @@ export default async function Home() {
   ] = await Promise.all([
     prisma.company.count({
       where: {
-        userId: demoUserId,
+        userId: currentUserId,
       },
     }),
     prisma.company.groupBy({
       by: ["status"],
       where: {
-        userId: demoUserId,
+        userId: currentUserId,
       },
       _count: {
         status: true,
@@ -75,14 +75,34 @@ export default async function Home() {
     }),
     prisma.task.count({
       where: {
-        userId: demoUserId,
+        userId: currentUserId,
         isCompleted: false,
+        OR: [
+          {
+            companyId: null,
+          },
+          {
+            company: {
+              userId: currentUserId,
+            },
+          },
+        ],
       },
     }),
     prisma.task.findMany({
       where: {
-        userId: demoUserId,
+        userId: currentUserId,
         isCompleted: false,
+        OR: [
+          {
+            companyId: null,
+          },
+          {
+            company: {
+              userId: currentUserId,
+            },
+          },
+        ],
         dueDate: {
           not: null,
         },
@@ -109,7 +129,7 @@ export default async function Home() {
           not: null,
         },
         company: {
-          userId: demoUserId,
+          userId: currentUserId,
         },
       },
       orderBy: {
@@ -130,7 +150,7 @@ export default async function Home() {
     }),
     prisma.company.findMany({
       where: {
-        userId: demoUserId,
+        userId: currentUserId,
       },
       orderBy: [
         {

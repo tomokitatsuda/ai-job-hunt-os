@@ -3,8 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { ApplicationStatus } from "@/generated/prisma/client";
-
-const demoUserId = "demo-user";
+import { getCurrentUserId } from "@/lib/current-user";
 
 const statusOptions = [
   { value: ApplicationStatus.NOT_APPLIED, label: "未応募" },
@@ -72,9 +71,10 @@ export default function NewCompanyPage() {
     }
 
     const { prisma } = await import("@/lib/prisma");
+    const currentUserId = await getCurrentUserId();
     const company = await prisma.company.create({
       data: {
-        userId: demoUserId,
+        userId: currentUserId,
         name,
         websiteUrl: toNullableString(formData.get("websiteUrl")),
         industry: toNullableString(formData.get("industry")),

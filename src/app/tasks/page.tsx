@@ -6,8 +6,7 @@ import {
   deleteTaskFromTaskList,
   toggleTaskCompletionFromTaskList,
 } from "./actions";
-
-const demoUserId = "demo-user";
+import { getCurrentUserId } from "@/lib/current-user";
 
 const taskStatusStyles = {
   completed: "bg-emerald-50 text-emerald-700 ring-emerald-200",
@@ -161,9 +160,20 @@ export default async function TasksPage() {
   await connection();
 
   const { prisma } = await import("@/lib/prisma");
+  const currentUserId = await getCurrentUserId();
   const tasks = await prisma.task.findMany({
     where: {
-      userId: demoUserId,
+      userId: currentUserId,
+      OR: [
+        {
+          companyId: null,
+        },
+        {
+          company: {
+            userId: currentUserId,
+          },
+        },
+      ],
     },
     orderBy: [
       {

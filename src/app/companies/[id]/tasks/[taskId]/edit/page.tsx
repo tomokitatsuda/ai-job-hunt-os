@@ -3,8 +3,7 @@ import { notFound } from "next/navigation";
 import { connection } from "next/server";
 
 import { updateTask } from "../../../actions";
-
-const demoUserId = "demo-user";
+import { getCurrentUserId } from "@/lib/current-user";
 
 const formatDateInputValue = (date: Date | null) =>
   date ? date.toISOString().slice(0, 10) : "";
@@ -19,11 +18,15 @@ export default async function EditTaskPage({ params }: EditTaskPageProps) {
   await connection();
 
   const { prisma } = await import("@/lib/prisma");
+  const currentUserId = await getCurrentUserId();
   const task = await prisma.task.findFirst({
     where: {
       id: taskId,
-      userId: demoUserId,
+      userId: currentUserId,
       companyId: id,
+      company: {
+        userId: currentUserId,
+      },
     },
     select: {
       id: true,
