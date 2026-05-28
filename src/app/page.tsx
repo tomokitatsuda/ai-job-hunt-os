@@ -2,6 +2,7 @@ import Link from "next/link";
 import { connection } from "next/server";
 
 import { ApplicationStatus } from "@/generated/prisma/client";
+import { SignOutButton } from "@/app/_components/auth-actions";
 import { getCurrentUserId } from "@/lib/current-user";
 
 const statusLabels: Record<ApplicationStatus, string> = {
@@ -214,6 +215,7 @@ export default async function Home() {
               >
                 一般タスクを追加
               </Link>
+              <SignOutButton />
             </div>
           </div>
         </header>
