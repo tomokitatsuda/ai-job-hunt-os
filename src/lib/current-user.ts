@@ -1,5 +1,14 @@
-import { DEMO_USER_ID } from "@/lib/user-constants";
+import { redirect } from "next/navigation";
+
+import { auth } from "@/auth";
 
 export async function getCurrentUserId() {
-  return DEMO_USER_ID;
+  const session = await auth();
+  const userId = session?.user?.id;
+
+  if (!userId) {
+    redirect("/login");
+  }
+
+  return userId;
 }
