@@ -28,9 +28,9 @@ AI Job Hunt OS は、就職活動に必要な情報を一元管理する Web ア
 
 v1.0 MVP では、応募管理の基本体験に絞ります。
 
-初期フェーズではモックデータで画面構成と情報設計を確認しました。現在は Next.js App Router + TypeScript + Tailwind CSS に加えて、Prisma 7 + PostgreSQL + Docker Compose によるローカル DB 保存へ移行済みです。
+初期フェーズではモックデータで画面構成と情報設計を確認しました。現在は Next.js App Router + TypeScript + Tailwind CSS に加えて、Prisma 7 + PostgreSQL + Docker Compose によるローカル DB 保存へ移行済みです。また、Auth.js / GitHub OAuth の基盤を導入し、ログインユーザーごとに Company / Task / InterviewLog / Dashboard のデータを分離する段階まで進んでいます。
 
-ただし、認証はまだ未実装です。現在は `demo-user` 固定で DB を読み書きするローカル MVP として扱います。
+ただし、middleware/proxy による全画面保護、初期データ作成フロー、demo-user データのログインユーザーへの自動移行はまだ未実装です。seed の `demo-user` データは認証ユーザーとは別であり、ログイン直後に既存 seed データが見えないのは正常です。
 
 - 応募先企業の管理
 - 企業ごとの選考ステータス
@@ -38,9 +38,10 @@ v1.0 MVP では、応募管理の基本体験に絞ります。
 - 応募先ごとのメモ、面接ログ、志望度、振り返り
 - 全体の進捗を確認するダッシュボード
 - Company 詳細画面内でのタスク管理
+- Task 一覧画面でのタスク管理
 - PostgreSQL へのデータ保存
 - Prisma を使った基本的な CRUD
-- 認証は v1.0 ローカル MVP では未実装とし、後続フェーズで検討する
+- Auth.js session user ID に基づく owner scoping
 
 MVP の目的は、就活情報を一覧し、次に何をすべきか判断できる状態を作ることです。
 
@@ -48,19 +49,17 @@ MVP の目的は、就活情報を一覧し、次に何をすべきか判断で�
 
 以下は現在未実装です。
 
-- 本番向け認証
-- ユーザー登録・ログイン
-- ログインユーザーごとのデータ分離
+- middleware/proxy による全画面保護
+- demo-user データのログインユーザーへの自動移行
+- 初期データ作成フロー
 - AI による文章生成
 - AI による面接対策
-- Task 一覧画面
-- 一般 Task 作成画面
 - InterviewLog 一覧画面
-- 検索・フィルター
+- 検索・フィルター・ソート
 - デプロイ
 - 本格的なテスト整備
 
-認証は v1.0 ローカル MVP には含めず、後続フェーズで検討します。
+Auth.js / GitHub OAuth 基盤、`/login`、サインイン / サインアウト action は導入済みです。ただし、全画面を middleware/proxy で保護するところまではまだ進めていません。
 
 ## v1.0 でやらないこと
 
@@ -72,7 +71,7 @@ v1.0 では、以下は実装しません。
 - 複数ユーザーでの共有
 - 高度な通知機能
 
-現時点では、Company を中心にした情報設計、DB 保存、基本 CRUD、Dashboard 集計を優先しています。
+現時点では、Company を中心にした情報設計、DB 保存、基本 CRUD、Dashboard 集計、認証ユーザー単位の owner scoping を優先しています。
 
 ## 技術スタック
 
@@ -87,10 +86,12 @@ v1.0 では、以下は実装しません。
 - PostgreSQL: ローカル DB
 - Docker Compose: ローカル PostgreSQL 起動
 - `@prisma/adapter-pg`: Prisma 7 の PostgreSQL adapter
+- Auth.js / NextAuth (`next-auth@^5.0.0-beta.31`): GitHub OAuth のサインイン基盤
+- `@auth/prisma-adapter@^2.11.2`: Auth.js と Prisma の接続
 
 `DATABASE_URL` は `prisma.config.ts` と `.env` で扱います。Prisma 7 前提のため、`schema.prisma` の `datasource` には `url = env("DATABASE_URL")` を書かない方針です。
 
-認証ライブラリと OpenAI API などの AI API は、今後の候補です。
+OpenAI API などの AI API は、今後の候補です。
 
 ## 開発方針
 
@@ -100,7 +101,7 @@ v1.0 では、以下は実装しません。
 - 実装済みの内容と予定を README で分けて書く
 - 最初はモックデータで UI と情報設計を確認する
 - DB は、画面とデータモデルの方針を固めてから追加する
-- 認証は、demo user 固定で DB 操作を確認してから追加する
+- 認証は、demo user 固定で DB 操作を確認してから Auth.js / GitHub OAuth 基盤を追加する
 - AI 機能は、就活データを十分に整理できる状態を作ってから追加する
 - 大きな機能を一度に入れず、小さい変更単位で進める
 
@@ -114,16 +115,17 @@ AI は開発補助として使いますが、設計意図、実装範囲、優�
 - MVP の範囲を決めて、作りすぎを避けていること
 - 実装前に README と docs で設計を残していること
 - Next.js、TypeScript、Tailwind CSS を使った Web アプリ開発の流れ
-- DB を追加済みで、認証と AI 機能を段階的に追加する開発プロセス
+- DB と Auth.js 基盤を追加済みで、AI 機能を段階的に追加する開発プロセス
 - AI を使う場合も、丸投げではなく人が設計判断していること
 
 ## 現時点で未確定の判断
 
-以下は今後の実装前に決める必要があります。Task 一覧画面、一般 Task 作成画面、InterviewLog 一覧画面は初期案では v1.0 候補でしたが、現在の v1.0 ローカル MVP では未実装の今後検討事項として扱います。
+以下は今後の実装前に決める必要があります。InterviewLog 一覧画面は初期案では v1.0 候補でしたが、現在は未実装の今後検討事項として扱います。
 
-- Task 一覧画面、一般 Task 作成画面、InterviewLog 一覧画面を後続フェーズでどう扱うか
-- 検索・フィルターの優先度
-- 認証方式
+- InterviewLog 一覧画面を後続フェーズでどう扱うか
+- 検索・フィルター・ソートの優先度
+- middleware/proxy による全画面保護の範囲
+- 初期データ作成フロー、または demo-user データ移行方針
 - AI 機能で最初に実装するユースケース
 - AI API に渡すデータの範囲と個人情報の扱い
 - デプロイ先
