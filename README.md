@@ -148,6 +148,16 @@ npm run dev
 
 開発サーバー起動後、ブラウザで `http://localhost:3000` を開きます。未ログインの場合は `/login` に redirect され、GitHub OAuth でログイン後に Dashboard を確認できます。
 
+## E2E smoke test
+
+v0.5.0 相当では、Playwright による最低限の E2E smoke test を追加しています。対象ブラウザは Chromium のみで、`npm run test:e2e` は `webServer` 設定により `npm run dev` を起動し、`http://localhost:3000` に対して `/login` 表示と未ログイン時の `/`、`/companies`、`/tasks` から `/login` への redirect を確認します。
+
+```bash
+npm run test:e2e
+```
+
+GitHub OAuth の実ログイン完走、ログイン済み CRUD、DB reset / seed、CI 連携、WebKit / Safari 相当の自動テストはまだ含めていません。
+
 詳しい手順や確認コマンドは [docs/setup.md](docs/setup.md) を参照してください。`.env.example` の `DATABASE_URL` はローカル開発用 Docker 環境のサンプルです。`AUTH_SECRET`、`AUTH_GITHUB_ID`、`AUTH_GITHUB_SECRET` はプレースホルダーのみを置いています。実際の `.env` / `.env.local`、本番 DB や個人用 DB の接続情報、OAuth secret、API キー、個人情報は commit しないでください。
 
 ## AI 活用方針
