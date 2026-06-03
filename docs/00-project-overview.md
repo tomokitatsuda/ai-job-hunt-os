@@ -28,7 +28,7 @@ AI Job Hunt OS は、就職活動に必要な情報を一元管理する Web ア
 
 v1.0 MVP では、応募管理の基本体験に絞ります。
 
-初期フェーズではモックデータで画面構成と情報設計を確認しました。現在は Next.js App Router + TypeScript + Tailwind CSS に加えて、Prisma 7 + PostgreSQL + Docker Compose によるローカル DB 保存へ移行済みです。また、Auth.js / GitHub OAuth の基盤を導入し、ログインユーザーごとに Company / Task / InterviewLog / Dashboard のデータを分離する段階まで進んでいます。
+初期フェーズではモックデータで画面構成と情報設計を確認しました。現在は Next.js App Router + TypeScript + Tailwind CSS に加えて、Prisma 7 + PostgreSQL + Docker Compose によるローカル DB 保存へ移行済みです。また、Auth.js / GitHub OAuth の基盤を導入し、ログインユーザーごとに Company / Task / InterviewLog / Dashboard のデータを分離する動作を手動確認済みです。
 
 ただし、middleware/proxy による全画面保護、初期データ作成フロー、demo-user データのログインユーザーへの自動移行はまだ未実装です。seed の `demo-user` データは認証ユーザーとは別であり、ログイン直後に既存 seed データが見えないのは正常です。
 

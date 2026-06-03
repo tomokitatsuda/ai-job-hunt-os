@@ -2,13 +2,15 @@
 
 ## このドキュメントの目的
 
-このドキュメントは、AI Job Hunt OS のモック MVP から DB 操作、Auth.js 基盤導入段階まで、現在どこまで実装されているかを整理するためのメモです。
+このドキュメントは、AI Job Hunt OS のモック MVP から DB 操作、Auth.js 基盤導入、v0.4.0 相当の認証後手動確認まで、現在どこまで実装されているかを整理するためのメモです。
 
-最初はモックデータを使って、企業一覧、企業詳細、企業に紐づくタスク、面接ログを画面で確認できる状態にしました。その後、Prisma 7 + PostgreSQL + Docker Compose を導入し、現在は Auth.js / GitHub OAuth の認証基盤を入れ、Company を中心に Task と InterviewLog を紐づけてログインユーザー単位で DB 操作を確認する段階まで進んでいます。
+最初はモックデータを使って、企業一覧、企業詳細、企業に紐づくタスク、面接ログを画面で確認できる状態にしました。その後、Prisma 7 + PostgreSQL + Docker Compose を導入し、現在は Auth.js / GitHub OAuth の認証基盤を入れ、Company を中心に Task と InterviewLog を紐づけてログインユーザー単位で DB 操作できる状態まで進んでいます。
 
 Company は一覧、詳細、作成、編集、削除まで実装済みです。Task は企業詳細画面内で表示・作成・更新・削除でき、Task 一覧画面でもログインユーザーの全 Task を未完了 / 完了に分けて確認できます。また、Task 一覧画面から Company に紐づかない一般 Task を作成し、Task 一覧画面から一般 Task と Company 紐づき Task の編集・削除もできます。InterviewLog は、まず企業詳細画面内で表示・作成・更新・削除できる最小構成にしています。Dashboard では DB 由来の集計を表示できる状態になっています。
 
 Auth.js / GitHub OAuth 基盤、`/login`、サインイン / サインアウト action、Auth.js session user ID に基づく owner scoping は導入済みです。`src/lib/current-user.ts` の `getCurrentUserId()` は Auth.js の `auth()` から `session.user.id` を取得し、未ログイン時は `/login` に redirect します。Company / Task / InterviewLog / Dashboard はログインユーザーごとにデータが分離されます。
+
+v0.4.0 相当では、未ログイン時の `/login` redirect、ログイン / ログアウト、Company CRUD、Task CRUD、InterviewLog CRUD、Dashboard 集計、`demo-user` とログインユーザーのデータが混ざらないことを手動確認済みです。詳細は `docs/auth-verification.md` にまとめています。
 
 ただし、middleware/proxy による全画面保護、demo-user データのログインユーザーへの自動移行、初期データ作成フロー、AI 機能、Task の Company 紐づけ変更、Company 選択つき Task 作成、検索・フィルター・ソート、InterviewLog 一覧画面はまだ実装していません。seed による `demo-user` データは認証ユーザーとは別であり、ログイン直後に既存 seed データが見えないのは正常です。
 
@@ -186,7 +188,7 @@ AI API、デプロイ環境、本格的なテスト基盤はまだ導入して�
 
 ## 5. 現在できること
 
-現在の DB 操作、Auth.js 基盤導入段階では、以下のことができます。
+現在の DB 操作、Auth.js 基盤導入、認証後手動確認済みの段階では、以下のことができます。
 
 - Dashboard で DB 由来の集計を表示できる
 - 応募企業数、未完了 Task 数、直近の Task 締切、直近の面接日を確認できる

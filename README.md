@@ -3,13 +3,15 @@
 ![Next.js](https://img.shields.io/badge/Next.js-000000?style=flat-square&logo=nextdotjs&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)
-![Prisma](https://img.shields.io/badge/Prisma-2D3748?style=flat-square&logo=prisma&logoColor=white)
+![Prisma 7](https://img.shields.io/badge/Prisma_7-2D3748?style=flat-square&logo=prisma&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=flat-square&logo=postgresql&logoColor=white)
-![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white)
+![Docker Compose](https://img.shields.io/badge/Docker_Compose-2496ED?style=flat-square&logo=docker&logoColor=white)
+![Auth.js / NextAuth](https://img.shields.io/badge/Auth.js%20%2F%20NextAuth-000000?style=flat-square)
+![GitHub OAuth](https://img.shields.io/badge/GitHub_OAuth-181717?style=flat-square&logo=github&logoColor=white)
 
 AI Job Hunt OS は、就職活動の応募状況、選考予定、タスク、面接ログを一元管理するための Web アプリです。
 
-現在は、Auth.js / GitHub OAuth の認証基盤を導入し、ログインユーザーごとに PostgreSQL 上の Company / Task / InterviewLog / Dashboard データを分離して扱う段階です。
+現在は v0.4.0 相当として、Auth.js / GitHub OAuth の認証基盤と `session.user.id` ベースの owner scoping を導入し、ログインユーザーごとに PostgreSQL 上の Company / Task / InterviewLog / Dashboard データを分離して扱う動作を手動確認済みです。
 
 ## 概要
 
@@ -48,6 +50,12 @@ AI Job Hunt OS では、就活に必要な情報を Company を中心に整理�
 Task は Company 詳細画面内で作成・編集・削除でき、Task 一覧画面ではログインユーザーの全 Task を未完了 / 完了に分けて確認し、完了状態を切り替えられます。また、Task 一覧画面から Company に紐づかない一般 Task を作成できます。Task 一覧画面では、Company 紐づき Task と一般 Task の違いを確認しながら、title、memo / description、dueDate の編集と削除ができます。Task の Company 紐づけ変更、Company 選択つき Task 作成、InterviewLog 一覧画面は、実装済みとは扱っていません。
 
 `getCurrentUserId()` は Auth.js の `auth()` から `session.user.id` を取得します。未ログイン時は `/login` に redirect します。ログイン後に作成した Company / Task は、その認証ユーザーの `userId` に紐づきます。seed で作成される `demo-user` データは認証ユーザーとは別の過去データ用ユーザーであり、ログイン直後に既存 seed データが見えないのは正常です。
+
+## 認証後の確認
+
+v0.4.0 相当では、未ログイン時の `/login` redirect、GitHub OAuth でのログイン / ログアウト、ログイン後の Company / Task / InterviewLog CRUD、Dashboard 集計、`demo-user` とログインユーザーのデータが混ざらないことを手動確認済みです。
+
+詳細なチェックリストは [docs/auth-verification.md](docs/auth-verification.md) にまとめています。
 
 ## スクリーンショット
 
@@ -160,4 +168,4 @@ AI 機能はまだ未実装です。将来的には、蓄積した Company / Tas
 8. 検索・フィルター・ソートの追加
 9. AI 機能の段階的な追加
 
-詳細な設計方針は [docs/00-project-overview.md](docs/00-project-overview.md)、現在の実装状況は [docs/02-mvp-implementation-status.md](docs/02-mvp-implementation-status.md) にまとめています。
+詳細な設計方針は [docs/00-project-overview.md](docs/00-project-overview.md)、現在の実装状況は [docs/02-mvp-implementation-status.md](docs/02-mvp-implementation-status.md)、認証後の確認項目は [docs/auth-verification.md](docs/auth-verification.md) にまとめています。

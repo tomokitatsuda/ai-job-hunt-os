@@ -2,7 +2,7 @@
 
 このドキュメントは、AI Job Hunt OS をローカル環境で起動するための手順です。
 
-現在のアプリは、認証をまだ実装していないローカル MVP です。データは `demo-user` 固定で扱い、Docker Compose で起動した PostgreSQL に保存します。
+現在のアプリは、Auth.js / GitHub OAuth の認証基盤を導入したローカル MVP です。通常動作ではログインユーザーごとに Company / Task / InterviewLog / Dashboard のデータを分離し、Docker Compose で起動した PostgreSQL に保存します。
 
 ## 必要なもの
 
@@ -38,16 +38,21 @@ npm install
 cp .env.example .env
 ```
 
-`.env` には、ローカル開発用の `DATABASE_URL` や Docker Compose 用の PostgreSQL 設定を入れます。
+`.env` には、ローカル開発用の `DATABASE_URL`、Docker Compose 用の PostgreSQL 設定、Auth.js / GitHub OAuth 用の設定を入れます。
 
 ```env
 DATABASE_URL="postgresql://postgres:postgres@localhost:5432/ai_job_hunt_os?schema=public"
 POSTGRES_USER="postgres"
 POSTGRES_PASSWORD="postgres"
 POSTGRES_DB="ai_job_hunt_os"
+AUTH_SECRET=""
+AUTH_GITHUB_ID=""
+AUTH_GITHUB_SECRET=""
 ```
 
-この `DATABASE_URL` は、Docker Compose で起動するローカル開発用 PostgreSQL への接続サンプルです。本番 DB や個人用 DB の接続情報、API キー、個人情報は記載・commit しないでください。このリポジトリでは `.env.example` だけを共有用のサンプルとして commit します。
+この `DATABASE_URL` は、Docker Compose で起動するローカル開発用 PostgreSQL への接続サンプルです。`AUTH_SECRET`、`AUTH_GITHUB_ID`、`AUTH_GITHUB_SECRET` はローカル用の実値を `.env` に設定してください。本番 DB や個人用 DB の接続情報、OAuth secret、API キー、個人情報は記載・commit しないでください。このリポジトリでは `.env.example` だけを共有用のサンプルとして commit します。
+
+GitHub OAuth を使うには、GitHub 側でローカル開発用の OAuth App を作成し、client ID を `AUTH_GITHUB_ID`、client secret を `AUTH_GITHUB_SECRET` に設定します。ローカル開発時の callback URL は `http://localhost:3000/api/auth/callback/github` です。`AUTH_SECRET` にはローカル用の十分に長いランダム文字列を設定します。いずれも実値は README / docs / commit に残さないでください。
 
 Next.js 側だけでローカル設定を上書きしたい場合は `.env.local` も使えます。ただし、Prisma CLI との説明をそろえるため、基本セットアップでは `.env` を使います。
 
@@ -91,6 +96,8 @@ npx prisma db seed
 
 seed により、`demo-user` とサンプルの Company / Task / InterviewLog が作成されます。
 
+`demo-user` は seed / 過去データ用のユーザーです。GitHub OAuth でログインしたユーザーとは別の `User` なので、ログイン直後に seed データが見えないのは、ユーザー分離が効いている正常な状態です。
+
 ## 8. 開発サーバーを起動する
 
 ```bash
@@ -103,7 +110,7 @@ npm run dev
 http://localhost:3000
 ```
 
-Dashboard が表示され、サンプルデータの応募状況、タスク、面接ログが確認できればセットアップ完了です。
+未ログインの場合は `/login` に redirect されます。GitHub OAuth でログイン後、Dashboard が表示され、ログインユーザーの応募状況、タスク、面接ログが確認できればセットアップ完了です。初回ログイン直後に seed データが見えない場合は、ログインユーザー用の Company / Task / InterviewLog を作成して動作確認してください。
 
 ## よくある確認コマンド
 
@@ -147,9 +154,10 @@ npm run build
 
 ## 注意事項
 
-- 認証はまだ未実装です。
-- 現在は `demo-user` 固定で DB を読み書きします。
+- Auth.js / GitHub OAuth の認証基盤は導入済みです。
+- 通常動作では Auth.js の `session.user.id` ベースで DB を読み書きします。
+- `demo-user` は seed / 過去データ用として残していますが、ログインユーザーへ自動移行はしません。
 - AI 機能はまだ未実装です。
 - デプロイ手順はまだ整備していません。
-- `.env`、`.env.local`、本番 DB や個人用 DB の `DATABASE_URL`、API キー、個人情報は commit しないでください。
+- `.env`、`.env.local`、本番 DB や個人用 DB の `DATABASE_URL`、OAuth secret、API キー、個人情報は commit しないでください。
 - `.env.example` は既に存在します。現時点では新規作成は不要です。
