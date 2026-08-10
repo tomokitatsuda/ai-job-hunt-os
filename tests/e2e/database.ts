@@ -3,24 +3,18 @@ import { randomUUID } from "node:crypto";
 import "dotenv/config";
 import { Pool } from "pg";
 
+import { assertSafeDatabaseTarget } from "../../src/lib/database-safety";
+
 const databaseUrl = process.env.DATABASE_URL;
 
 if (!databaseUrl) {
   throw new Error("DATABASE_URL is required for authenticated E2E tests.");
 }
 
-const databaseHost = new URL(databaseUrl).hostname;
-const localDatabaseHosts = new Set(["localhost", "127.0.0.1", "::1"]);
-
-if (
-  !localDatabaseHosts.has(databaseHost) &&
-  process.env.ALLOW_REMOTE_E2E_DATABASE !== "true"
-) {
-  throw new Error(
-    "Authenticated E2E tests only use a local database by default. " +
-      "Set ALLOW_REMOTE_E2E_DATABASE=true only for an isolated remote test database.",
-  );
-}
+assertSafeDatabaseTarget(databaseUrl, {
+  operation: "Authenticated E2E tests",
+  allowRemote: process.env.ALLOW_REMOTE_E2E_DATABASE === "true",
+});
 
 const pool = new Pool({
   connectionString: databaseUrl,
@@ -62,6 +56,39 @@ export async function createTestCompany(userId: string, name: string) {
   );
 
   return { id, name };
+}
+
+export async function createTestTask(
+  userId: string,
+  companyId: string,
+  title: string,
+) {
+  const id = `e2e-task-${randomUUID()}`;
+
+  await pool.query(
+    `INSERT INTO "Task" ("id", "userId", "companyId", "title", "updatedAt")
+     VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP)`,
+    [id, userId, companyId, title],
+  );
+
+  return { id, title };
+}
+
+export async function createTestInterviewLog(
+  companyId: string,
+  interviewType: string,
+) {
+  const id = `e2e-interview-log-${randomUUID()}`;
+
+  await pool.query(
+    `INSERT INTO "InterviewLog" (
+       "id", "companyId", "interviewDate", "interviewType", "updatedAt"
+     )
+     VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP)`,
+    [id, companyId, new Date("2030-01-15T00:00:00.000Z"), interviewType],
+  );
+
+  return { id, interviewType };
 }
 
 export async function findTestTask(userId: string) {

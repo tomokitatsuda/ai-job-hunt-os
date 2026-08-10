@@ -2,12 +2,79 @@ import { randomUUID } from "node:crypto";
 
 import {
   createTestCompany,
+  createTestInterviewLog,
+  createTestTask,
+  createTestUser,
+  deleteTestUser,
   findTestInterviewLog,
   findTestTask,
 } from "./database";
 import { expect, test } from "./fixtures";
 
 test.describe("authenticated onboarding and CRUD", () => {
+  test("does not expose another user's application data", async ({
+    authenticatedPage: page,
+  }) => {
+    const suffix = randomUUID().slice(0, 8);
+    const foreignUserId = await createTestUser();
+    const foreignCompanyName = `Foreign Company ${suffix}`;
+    const foreignTaskTitle = `Foreign Task ${suffix}`;
+    const foreignInterviewType = `Foreign Interview ${suffix}`;
+
+    try {
+      const foreignCompany = await createTestCompany(
+        foreignUserId,
+        foreignCompanyName,
+      );
+      const foreignTask = await createTestTask(
+        foreignUserId,
+        foreignCompany.id,
+        foreignTaskTitle,
+      );
+      const foreignInterviewLog = await createTestInterviewLog(
+        foreignCompany.id,
+        foreignInterviewType,
+      );
+
+      await page.goto("/");
+      await expect(page.getByText(foreignCompanyName)).toHaveCount(0);
+      await expect(page.getByText(foreignTaskTitle)).toHaveCount(0);
+      await expect(page.getByText(foreignInterviewType)).toHaveCount(0);
+
+      await page.goto("/companies");
+      await expect(page.getByText(foreignCompanyName)).toHaveCount(0);
+
+      await page.goto(`/companies/${foreignCompany.id}`);
+      await expect(
+        page.getByRole("heading", { name: "This page could not be found." }),
+      ).toBeVisible();
+
+      await page.goto(`/tasks/${foreignTask.id}/edit`);
+      await expect(
+        page.getByRole("heading", { name: "This page could not be found." }),
+      ).toBeVisible();
+
+      await page.goto(
+        `/companies/${foreignCompany.id}/tasks/${foreignTask.id}/edit`,
+      );
+      await expect(
+        page.getByRole("heading", { name: "This page could not be found." }),
+      ).toBeVisible();
+
+      await page.goto(
+        `/companies/${foreignCompany.id}/interview-logs/${foreignInterviewLog.id}/edit`,
+      );
+      await expect(
+        page.getByRole("heading", { name: "This page could not be found." }),
+      ).toBeVisible();
+
+      await page.goto("/tasks");
+      await expect(page.getByText(foreignTaskTitle)).toHaveCount(0);
+    } finally {
+      await deleteTestUser(foreignUserId);
+    }
+  });
+
   test("creates starter data from the first-login dashboard", async ({
     authenticatedPage: page,
   }) => {

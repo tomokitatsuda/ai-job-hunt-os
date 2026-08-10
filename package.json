@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "test:unit": "tsx --test tests/unit/*.test.ts",
     "test:e2e": "playwright test",
     "test:e2e:chromium": "playwright test --project=chromium",
     "test:e2e:webkit": "playwright test --project=webkit",

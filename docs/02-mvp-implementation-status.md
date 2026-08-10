@@ -2,7 +2,7 @@
 
 ## このドキュメントの目的
 
-このドキュメントは、AI Job Hunt OS のモック MVP から DB 操作、Auth.js 基盤導入、v0.8.0 相当の初回オンボーディング、認証済み E2E、GitHub Actions CI まで、現在どこまで実装されているかを整理するためのメモです。
+このドキュメントは、AI Job Hunt OS のモック MVP から DB 操作、Auth.js 基盤導入、v0.9.0 相当の初回オンボーディング、owner isolation E2E、GitHub Actions CI、demo data方針まで、現在どこまで実装されているかを整理するためのメモです。
 
 最初はモックデータを使って、企業一覧、企業詳細、企業に紐づくタスク、面接ログを画面で確認できる状態にしました。その後、Prisma 7 + PostgreSQL + Docker Compose を導入し、現在は Auth.js / GitHub OAuth の認証基盤を入れ、Company を中心に Task と InterviewLog を紐づけてログインユーザー単位で DB 操作できる状態まで進んでいます。
 
@@ -12,7 +12,7 @@ Auth.js / GitHub OAuth 基盤、`/login`、サインイン / サインアウト 
 
 未ログイン時の `/login` redirect、ログイン / ログアウト、Company CRUD、Task CRUD、InterviewLog CRUD、Dashboard 集計、`demo-user` とログインユーザーのデータが混ざらないことを手動確認済みです。さらに認証境界、初回オンボーディング、主要 CRUD は Playwright で自動確認します。詳細は `docs/auth-verification.md` にまとめています。
 
-ただし、demo-user データのログインユーザーへの自動移行、AI 機能、検索・フィルター・ソート、InterviewLog 一覧画面はまだ実装していません。seed による `demo-user` データは認証ユーザーとは別であり、ログイン直後に既存 seed データが見えないのは正常です。
+AI 機能、検索・フィルター・ソート、InterviewLog 一覧画面はまだ実装していません。seedによる `demo-user` はローカル開発fixtureに限定し、通常ユーザーへ移行しない方針です。
 
 就活 GitHub として読まれたときに、現在の実装範囲、まだ実装していない範囲、次に進む候補が伝わることを目的にしています。
 
@@ -109,7 +109,7 @@ Auth.js / GitHub OAuth 基盤のため、`Account`、`Session`、`VerificationTo
 
 `getCurrentUserId()` は Auth.js の `auth()` から `session.user.id` を取得します。未ログイン時は `/login` に redirect します。Company / Task は `userId` で絞り、InterviewLog は Company 経由で所有者確認する形にしています。
 
-seed による `demo-user` は、過去データやローカル確認用のユーザーとして残しています。ただし、GitHub OAuth でログインした認証ユーザーとは別の `User` なので、ログイン直後に seed の Company / Task が見えないのは正常です。ログイン後に作成した Company / Task は、そのログインユーザーの `userId` に紐づきます。
+seed による `demo-user` は、ローカル確認用の開発fixtureとして残しています。GitHub OAuthでログインした認証ユーザーとは別の `User` であり、通常ユーザーへの移行・コピーは行いません。ログイン後に作成したCompany / Taskは、そのログインユーザーの `userId` に紐づきます。
 
 ## 3. 現在の技術スタック
 
@@ -228,7 +228,9 @@ AI API とデプロイ環境はまだ導入していません。テストは Pla
 - 企業一覧から企業詳細へ移動できる
 - 存在しない企業 ID にアクセスした場合は 404 になる
 - Playwright で未認証の redirect、初回オンボーディング、Company / Task / InterviewLog CRUD を自動確認できる
-- GitHub Actions で PostgreSQL を起動し、Chromium / WebKit の合計18件を継続的に確認できる
+- GitHub Actions で PostgreSQL を起動し、unit testとChromium / WebKitの合計20件を継続的に確認できる
+- 別ユーザーのCompany / Task / InterviewLogが表示されず、詳細・編集の直URLも404になることを確認できる
+- seedと認証済みE2Eのremote DB誤実行をデフォルトで拒否できる
 
 Task は Company 詳細画面内で表示・作成・更新・削除でき、Task 一覧画面ではログインユーザーの全 Task の確認、完了状態の切り替え、Company 選択つき作成、紐づけ変更、編集・削除ができます。InterviewLog は、まず企業詳細画面内で表示・作成・更新・削除できる最小構成にしています。
 
@@ -236,7 +238,6 @@ Task は Company 詳細画面内で表示・作成・更新・削除でき、Tas
 
 以下はまだ実装していません。
 
-- demo-user データのログインユーザーへの自動移行
 - AI 機能
 - 検索・フィルター・ソート
 - InterviewLog 一覧画面
@@ -257,7 +258,7 @@ AI Job Hunt OS では、Company を中心に Task と InterviewLog を紐づけ�
 
 Task と InterviewLog は、まず企業詳細画面内で表示・作成・更新・削除できる最小構成にしました。Company に紐づけて作成し、Task は完了/未完了の切り替えも確認できるようにしています。さらに Task 一覧画面では、ログインユーザーの全 Task を未完了 / 完了に分けて確認し、関連 Company へ移動できるようにしています。作成・編集時には Company を任意選択でき、一般 Task への紐づけ解除も可能です。検索・フィルター・ソート、InterviewLog 一覧画面はまだ未実装です。
 
-Auth.js / GitHub OAuth の基盤を導入し、`getCurrentUserId()` は Auth.js session user ID を返す形に切り替えました。これにより、Company / Task / InterviewLog / Dashboard はログインユーザーごとのデータ取得になっています。さらに、Next.js 16 Proxy でアプリ画面への未ログインアクセスを早期に redirect します。初回データは明示的な Server Action で作り、既存データがある場合は追加しません。demo-user データの自動移行はまだ未実装です。
+Auth.js / GitHub OAuth の基盤を導入し、`getCurrentUserId()` は Auth.js session user ID を返す形に切り替えました。これにより、Company / Task / InterviewLog / Dashboard はログインユーザーごとのデータ取得になっています。さらに、Next.js 16 Proxy でアプリ画面への未ログインアクセスを早期に redirect します。初回データは明示的な Server Action で作り、既存データがある場合は追加しません。demo-userは開発fixtureとして分離し、通常ユーザーへ移行しない方針です。
 
 ### Company 削除について
 
@@ -277,7 +278,6 @@ Task 一覧画面から作成する一般 Task は `companyId: null`、Company �
 次に進む候補は以下です。
 
 - README / docs の継続整備
-- demo-user データ移行方針の検討
 - デプロイ準備
 - InterviewLog 一覧画面の検討
 - 検索・フィルター・ソート
@@ -296,6 +296,7 @@ Task 一覧画面から作成する一般 Task は `companyId: null`、Company �
 - 初回ユーザーには選べるオンボーディングを出し、明示操作なしにデータを混ぜない設計にした
 - 一時 User / Session を作る Playwright fixture により、認証回避を実装せず主要 CRUD を自動確認した
 - Chromium / WebKit の両方を PostgreSQL service container つき GitHub Actions で実行できるようにした
+- demo-userを開発fixtureに限定し、remote seed防止とowner isolationテストで境界を保証した
 - demo user 固定で DB 操作を先に検証した後、Auth.js session user ID ベースの owner scoping に切り替えた
 - seed の demo-user データは認証ユーザーとは別であり、ログイン直後に見えないのは正常な状態として整理した
 - seed により、ローカル開発環境で再現できるサンプルデータを用意した

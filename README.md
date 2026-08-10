@@ -12,7 +12,7 @@
 
 AI Job Hunt OS は、就職活動の応募状況、選考予定、タスク、面接ログを一元管理するための Web アプリです。
 
-現在は v0.8.0 相当として、初回ユーザー向けオンボーディング、認証済み CRUD の自動 E2E テスト、PostgreSQL を含む GitHub Actions CI まで導入済みです。
+現在は v0.9.0 相当として、初回オンボーディング、認証済み CRUD とowner isolationの自動テスト、PostgreSQLを含むGitHub Actions CI、demo dataの安全方針まで導入済みです。
 
 ## 概要
 
@@ -51,18 +51,22 @@ AI Job Hunt OS では、就活に必要な情報を Company を中心に整理�
 - Company も Task もない初回ユーザー向けのオンボーディング表示
 - Company 1 件と Task 2 件を安全に作るスターターデータ作成 action
 - Playwright による未認証境界・認証済み CRUD・オンボーディングの E2E テスト
-- Chromium / WebKit の2ブラウザで合計18件の E2E テスト
-- GitHub Actions による migration・lint・schema検証・build・E2E の自動実行
+- Chromium / WebKit の2ブラウザで合計20件の E2E テスト
+- 別ユーザーのCompany / Task / InterviewLogを表示しないowner isolation E2E
+- remote DBへのseed・認証済みE2E誤実行を防ぐ安全判定とunit test
+- GitHub Actions による migration・lint・schema検証・unit test・build・E2E の自動実行
 
 Task は Company 詳細画面内で作成・編集・削除でき、Task 一覧画面ではログインユーザーの全 Task を未完了 / 完了に分けて確認し、完了状態を切り替えられます。また、Task 一覧画面の作成フォームでは Company を任意選択でき、未選択なら一般 Task、選択済みなら Company 紐づき Task として保存します。Task 編集画面では title、memo、dueDate に加えて Company の紐づけ先を変更でき、Company との紐づけ解除も可能です。
 
-`src/proxy.ts` は `/`、`/companies/:path*`、`/tasks/:path*` を保護し、未ログイン時は Auth.js の callback URL を付けて `/login` へ redirect します。Proxy は入口での早期チェックとして使い、データ取得・更新時には引き続き `getCurrentUserId()` で `session.user.id` を確認します。ログイン後に作成した Company / Task は、その認証ユーザーの `userId` に紐づきます。seed で作成される `demo-user` データは認証ユーザーとは別の過去データ用ユーザーであり、ログイン直後に既存 seed データが見えないのは正常です。
+`src/proxy.ts` は `/`、`/companies/:path*`、`/tasks/:path*` を保護し、未ログイン時は Auth.js の callback URL を付けて `/login` へ redirect します。Proxy は入口での早期チェックとして使い、データ取得・更新時には引き続き `getCurrentUserId()` で `session.user.id` を確認します。ログイン後に作成した Company / Task は、その認証ユーザーの `userId` に紐づきます。
+
+seedで作成する `demo-user` はローカル開発専用のfixtureです。通常ユーザーへ自動移行・自動コピーせず、初回体験はオンボーディングに一本化します。詳しい判断理由と、将来本物の旧データ移行が必要になった場合の条件は [docs/03-demo-data-policy.md](docs/03-demo-data-policy.md) にまとめています。
 
 Company と Task がどちらもない場合、Dashboard に初回セットアップを表示します。ユーザーは空のまま Company を登録するか、サンプル Company 1 件、Company に紐づく Task 1 件、一般 Task 1 件を作成して、編集・削除しながら操作を学べます。既存データがあるユーザーには追加せず、所有者も現在の認証ユーザーに限定します。
 
 ## 認証後の確認
 
-v0.4.0 相当では、未ログイン時の `/login` redirect、GitHub OAuth でのログイン / ログアウト、ログイン後の Company / Task / InterviewLog CRUD、Dashboard 集計、`demo-user` とログインユーザーのデータが混ざらないことを手動確認済みです。
+GitHub OAuthでの実ログイン／ログアウトは手動確認し、未ログイン時のredirect、認証済みCRUD、Dashboard集計、初回オンボーディング、owner isolationはPlaywrightで自動確認しています。
 
 詳細なチェックリストは [docs/auth-verification.md](docs/auth-verification.md) にまとめています。
 
@@ -95,7 +99,6 @@ Company の基本情報と、その Company に紐づく Task / InterviewLog を
 
 ## 現在未実装の機能
 
-- demo-user データのログインユーザーへの自動移行
 - AI 機能
 - InterviewLog 一覧画面
 - 検索・フィルター・ソート
@@ -103,6 +106,7 @@ Company の基本情報と、その Company に紐づく Task / InterviewLog を
 - GitHub OAuth の実ログインを含む外部サービス連携テスト
 
 Auth.js / GitHub OAuth の基盤、`/login`、サインイン / サインアウト action、アプリ画面を対象にした Proxy、初回ユーザー向けスターターデータ作成フローは導入済みです。
+demo-userの自動移行は未実装ではなく、データ所有権を守るため実施しない方針です。
 
 ## 設計上の工夫
 
@@ -157,7 +161,7 @@ npm run dev
 
 ## E2E test
 
-Playwright で Chromium と WebKit を対象に、各9本、合計18本の E2E テストを実行します。各ブラウザの5本は `/login` と未ログイン時の認証境界、4本は初回オンボーディング、Company CRUD、Task CRUD と Company 紐づけ変更、InterviewLog CRUD を確認します。認証済みテストは一時的な User と Auth.js Session を DB に作成し、ブラウザへセッション Cookie を設定するため、アプリ側にテスト専用の認証回避を入れていません。各テストのデータは終了時に削除します。
+Playwright で Chromium と WebKit を対象に、各10本、合計20本の E2E テストを実行します。各ブラウザの5本は `/login` と未ログイン時の認証境界、残り5本はowner isolation、初回オンボーディング、Company CRUD、Task CRUDとCompany紐づけ変更、InterviewLog CRUDを確認します。認証済みテストは一時的な User と Auth.js Session を DB に作成し、ブラウザへセッション Cookie を設定するため、アプリ側にテスト専用の認証回避を入れていません。各テストのデータは終了時に削除します。
 
 ```bash
 docker compose up -d
@@ -177,7 +181,7 @@ npm run test:e2e:webkit
 
 `.github/workflows/ci.yml` は `main` への push と pull request で PostgreSQL 17 の service container を起動し、migration、lint、Prisma schema validation、production build、Chromium / WebKit E2E を自動実行します。結果にかかわらず Playwright の HTML report を artifact として14日間保存します。
 
-GitHub OAuth プロバイダーとの実ログイン完走はまだ含めていません。E2E は `DATABASE_URL` の User / Session / Company / Task / InterviewLog を操作するため、デフォルトでは localhost の DB だけを許可します。隔離済みのremote test DBを使う場合だけ、明示的に `ALLOW_REMOTE_E2E_DATABASE=true` を設定してください。
+GitHub OAuth プロバイダーとの実ログイン完走はまだ含めていません。seedとE2EはデフォルトでlocalhostのDBだけを許可します。隔離済みのremote development/test DBを使う場合だけ、それぞれ `ALLOW_REMOTE_SEED=true`、`ALLOW_REMOTE_E2E_DATABASE=true` を明示してください。
 
 詳しい手順や確認コマンドは [docs/setup.md](docs/setup.md) を参照してください。`.env.example` の `DATABASE_URL` はローカル開発用 Docker 環境のサンプルです。`AUTH_SECRET`、`AUTH_GITHUB_ID`、`AUTH_GITHUB_SECRET` はプレースホルダーのみを置いています。実際の `.env` / `.env.local`、本番 DB や個人用 DB の接続情報、OAuth secret、API キー、個人情報は commit しないでください。
 
@@ -190,10 +194,9 @@ AI 機能はまだ未実装です。将来的には、蓄積した Company / Tas
 ## 今後の予定
 
 1. README / docs の継続整備
-2. demo-user データ移行方針の検討
-3. デプロイ準備
-4. InterviewLog 一覧画面の検討
-5. 検索・フィルター・ソートの追加
-6. AI 機能の段階的な追加
+2. デプロイ準備
+3. InterviewLog 一覧画面の検討
+4. 検索・フィルター・ソートの追加
+5. AI 機能の段階的な追加
 
-詳細な設計方針は [docs/00-project-overview.md](docs/00-project-overview.md)、現在の実装状況は [docs/02-mvp-implementation-status.md](docs/02-mvp-implementation-status.md)、認証後の確認項目は [docs/auth-verification.md](docs/auth-verification.md) にまとめています。
+詳細な設計方針は [docs/00-project-overview.md](docs/00-project-overview.md)、現在の実装状況は [docs/02-mvp-implementation-status.md](docs/02-mvp-implementation-status.md)、認証後の確認項目は [docs/auth-verification.md](docs/auth-verification.md)、demo dataの判断は [docs/03-demo-data-policy.md](docs/03-demo-data-policy.md) にまとめています。

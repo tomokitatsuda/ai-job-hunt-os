@@ -3,6 +3,7 @@ import "dotenv/config";
 import { PrismaPg } from "@prisma/adapter-pg";
 
 import { ApplicationStatus, PrismaClient } from "../src/generated/prisma/client";
+import { assertSafeDatabaseTarget } from "../src/lib/database-safety";
 import { DEMO_USER_ID } from "../src/lib/user-constants";
 
 const databaseUrl = process.env.DATABASE_URL;
@@ -12,6 +13,11 @@ if (!databaseUrl) {
     "DATABASE_URL is not set. Set it in your environment or .env before running prisma db seed.",
   );
 }
+
+assertSafeDatabaseTarget(databaseUrl, {
+  operation: "Prisma seed",
+  allowRemote: process.env.ALLOW_REMOTE_SEED === "true",
+});
 
 const adapter = new PrismaPg({
   connectionString: databaseUrl,

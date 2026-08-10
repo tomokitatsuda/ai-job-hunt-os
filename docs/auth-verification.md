@@ -4,7 +4,7 @@
 
 Auth.js / GitHub OAuth の導入後、通常動作では `getCurrentUserId()` が Auth.js の `auth()` から `session.user.id` を取得します。未ログイン時は主要画面から `/login` に redirect され、ログイン後に作成した Company / Task / InterviewLog はログインユーザーに紐づきます。
 
-seed の `demo-user` は、過去データやローカル seed 確認用のユーザーとして残します。GitHub OAuth でログインした認証ユーザーとは別の `User` なので、ログイン直後に seed の Company / Task / InterviewLog が見えないのは、ユーザー分離が効いている正常な状態です。
+seed の `demo-user` は、ローカル開発fixtureとして残します。GitHub OAuthでログインした認証ユーザーとは別の `User` なので、ログイン直後にseedのCompany / Task / InterviewLogが見えないのは、ユーザー分離が効いている正常な状態です。
 
 ## 確認済み項目
 
@@ -23,17 +23,19 @@ seed の `demo-user` は、過去データやローカル seed 確認用のユ�
 - スターターデータ作成でサンプル Company 1 件、Company 紐づき Task 1 件、一般 Task 1 件が作られる
 - データ作成後は初回オンボーディングが表示されなくなる
 - seed の `demo-user` データと GitHub OAuth でログインしたユーザーのデータが混ざらない
+- 別ユーザーのCompany / Task / InterviewLogがDashboardと一覧に表示されず、詳細・編集の直URLは404になる
 
 ## demo-user の扱い
 
-- `demo-user` は seed / 過去データ用として残す
+- `demo-user` はローカル開発用seed fixtureとして残す
 - `demo-user` のデータは、GitHub OAuth でログインした通常ユーザーへ自動移行しない
 - ログイン直後に seed データが見えない場合は、owner scoping が効いている正常な状態として扱う
-- demo-user データのログインユーザーへの移行方針は今後の検討事項とする
+- 初回体験にはDashboardのスターターデータを使い、demo-userをコピーしない
+- 将来本物の旧データ移行が必要になった場合は、通常画面ではなく監査可能な管理scriptとして別途設計する
 
 ## 自動テストの範囲
 
-`npm run test:e2e` は Chromium と WebKit で各9本、合計18本のテストを実行します。
+`npm run test:e2e` は Chromium と WebKit で各10本、合計20本のテストを実行します。
 
 - 未ログイン時の `/`、`/companies`、`/companies/new`、`/tasks` の redirect と callback URL
 - `/login` の表示
@@ -41,10 +43,11 @@ seed の `demo-user` は、過去データやローカル seed 確認用のユ�
 - Company の作成・表示・編集・削除
 - Task の作成・Company 紐づけ変更・完了切り替え・削除
 - InterviewLog の作成・編集・削除
+- 別ユーザーのCompany / Task / InterviewLogに対するowner isolation
 
 認証済みテストでは、テストごとに一時 User と Auth.js Session を DB に作り、ブラウザに `authjs.session-token` Cookie を設定します。アプリ本体の Auth.js と owner scoping を通り、終了時にはそのユーザーに属するデータを削除します。GitHub OAuth プロバイダーとの実ログイン完走は自動テストの対象外です。
 
-GitHub Actions では専用の PostgreSQL service container にmigrationを適用し、lint、Prisma schema validation、production buildに続けて同じ18本を1 workerで実行します。ローカルの `npm run test:e2e` は通常の並列実行です。
+GitHub Actions では専用のPostgreSQL service containerにmigrationを適用し、lint、Prisma schema validation、DB安全判定unit test、production buildに続けて同じ20本を1 workerで実行します。ローカルの `npm run test:e2e` は通常の並列実行です。
 
 ## 秘密情報チェック
 
@@ -56,4 +59,3 @@ GitHub Actions では専用の PostgreSQL service container にmigrationを適�
 ## まだ自動化していないこと
 
 - GitHub OAuth プロバイダーとの実ログイン完走は自動化していない
-- demo-user データのログインユーザーへの自動移行はまだ実装していない

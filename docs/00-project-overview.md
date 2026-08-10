@@ -30,7 +30,7 @@ v1.0 MVP では、応募管理の基本体験に絞ります。
 
 初期フェーズではモックデータで画面構成と情報設計を確認しました。現在は Next.js App Router + TypeScript + Tailwind CSS に加えて、Prisma 7 + PostgreSQL + Docker Compose によるローカル DB 保存へ移行済みです。また、Auth.js / GitHub OAuth の基盤と Next.js 16 Proxy による画面保護を導入し、ログインユーザーごとに Company / Task / InterviewLog / Dashboard のデータを分離しています。初回オンボーディングと主要 CRUD は Playwright でも自動確認できます。
 
-Company と Task がない初回ユーザーには Dashboard でセットアップを案内し、サンプル Company 1 件と Task 2 件を作成できます。ただし、demo-user データのログインユーザーへの自動移行は未実装です。seed の `demo-user` データは認証ユーザーとは別であり、ログイン直後に既存 seed データが見えないのは正常です。
+Company と Task がない初回ユーザーには Dashboard でセットアップを案内し、サンプル Company 1 件と Task 2 件を作成できます。seed の `demo-user` はローカル開発fixtureに限定し、認証ユーザーへ自動移行・コピーしません。判断の詳細は [03-demo-data-policy.md](03-demo-data-policy.md) に記録しています。
 
 - 応募先企業の管理
 - 企業ごとの選考ステータス
@@ -47,6 +47,7 @@ Company と Task がない初回ユーザーには Dashboard でセットアッ�
 - 初回ユーザー向けオンボーディングとスターターデータ作成
 - Playwright による未認証境界と認証済み主要 CRUD の E2E テスト
 - Chromium / WebKit と GitHub Actions による継続的な自動検証
+- remote DBへのseed・E2E誤実行防止とowner isolationテスト
 
 MVP の目的は、就活情報を一覧し、次に何をすべきか判断できる状態を作ることです。
 
@@ -54,7 +55,6 @@ MVP の目的は、就活情報を一覧し、次に何をすべきか判断で�
 
 以下は現在未実装です。
 
-- demo-user データのログインユーザーへの自動移行
 - AI による文章生成
 - AI による面接対策
 - InterviewLog 一覧画面
@@ -63,6 +63,7 @@ MVP の目的は、就活情報を一覧し、次に何をすべきか判断で�
 - GitHub OAuth の実ログインを含む外部サービス連携テスト
 
 Auth.js / GitHub OAuth 基盤、`/login`、サインイン / サインアウト action、Dashboard / Company / Task 画面の Proxy 保護は導入済みです。
+demo-userは通常ユーザーへ移行せず、初回オンボーディングを利用する方針を採用済みです。
 
 ## v1.0 でやらないこと
 
@@ -129,7 +130,6 @@ AI は開発補助として使いますが、設計意図、実装範囲、優�
 
 - InterviewLog 一覧画面を後続フェーズでどう扱うか
 - 検索・フィルター・ソートの優先度
-- demo-user データ移行方針
 - AI 機能で最初に実装するユースケース
 - AI API に渡すデータの範囲と個人情報の扱い
 - デプロイ先

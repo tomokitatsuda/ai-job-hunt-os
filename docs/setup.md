@@ -48,6 +48,8 @@ POSTGRES_DB="ai_job_hunt_os"
 AUTH_SECRET=""
 AUTH_GITHUB_ID=""
 AUTH_GITHUB_SECRET=""
+ALLOW_REMOTE_SEED="false"
+ALLOW_REMOTE_E2E_DATABASE="false"
 ```
 
 この `DATABASE_URL` は、Docker Compose で起動するローカル開発用 PostgreSQL への接続サンプルです。`AUTH_SECRET`、`AUTH_GITHUB_ID`、`AUTH_GITHUB_SECRET` はローカル用の実値を `.env` に設定してください。本番 DB や個人用 DB の接続情報、OAuth secret、API キー、個人情報は記載・commit しないでください。このリポジトリでは `.env.example` だけを共有用のサンプルとして commit します。
@@ -96,7 +98,9 @@ npx prisma db seed
 
 seed により、`demo-user` とサンプルの Company / Task / InterviewLog が作成されます。
 
-`demo-user` は seed / 過去データ用のユーザーです。GitHub OAuth でログインしたユーザーとは別の `User` なので、ログイン直後に seed データが見えないのは、ユーザー分離が効いている正常な状態です。
+`demo-user` はローカル開発用のfixtureです。GitHub OAuthでログインしたユーザーとは別の `User` なので、ログイン直後にseedデータが見えないのは、ユーザー分離が効いている正常な状態です。通常ユーザーへの自動移行・コピーは行いません。
+
+誤って本番DBへサンプルを投入しないよう、seedはlocalhostのDBだけをデフォルトで許可します。隔離したremote development DBへ投入する必要がある場合だけ、一時的に `ALLOW_REMOTE_SEED=true` を設定してください。
 
 ## 8. 開発サーバーを起動する
 
@@ -123,7 +127,7 @@ npx playwright install chromium webkit
 npm run test:e2e
 ```
 
-Chromium と WebKit のそれぞれで、未認証の画面保護 5 本と、初回オンボーディング・Company・Task・InterviewLog の認証済み操作 4 本を確認します。Playwright の `webServer` が開発サーバーを自動起動するため、別ターミナルで `npm run dev` を起動する必要はありません。
+ChromiumとWebKitのそれぞれで、未認証の画面保護5本と、owner isolation・初回オンボーディング・Company・Task・InterviewLogの認証済み操作5本を確認します。Playwrightの `webServer` が開発サーバーを自動起動するため、別ターミナルで `npm run dev` を起動する必要はありません。
 
 対象を分けて実行する場合は、次のコマンドを使います。
 
@@ -144,8 +148,9 @@ npm run test:e2e:webkit
 2. `npx prisma migrate deploy`
 3. `npm run lint`
 4. `npx prisma validate`
-5. `npm run build`
-6. Chromium / WebKit のインストールと `npm run test:e2e`
+5. `npm run test:unit`
+6. `npm run build`
+7. Chromium / WebKit のインストールと `npm run test:e2e`
 
 CIでは先にbuildしたアプリを `npm run start` で起動してE2Eを実行します。localhostのproduction serverをAuth.jsに許可する `AUTH_TRUST_HOST=true` もCI内だけで設定します。Playwright HTML reportはGitHub Actionsのartifactとして14日間保存されます。CI用のDB・Auth.js・GitHub OAuth値はworkflow内の使い捨て／placeholderであり、実際のOAuth secretは使用しません。
 
@@ -181,6 +186,12 @@ Lint を実行します。
 npm run lint
 ```
 
+DB安全判定のunit testを実行します。
+
+```bash
+npm run test:unit
+```
+
 E2E テストを実行します。
 
 ```bash
@@ -192,6 +203,7 @@ npm run test:e2e
 ```bash
 npm run lint
 npx prisma validate
+npm run test:unit
 npm run test:e2e
 npm run build
 ```
@@ -200,7 +212,7 @@ npm run build
 
 - Auth.js / GitHub OAuth の認証基盤は導入済みです。
 - 通常動作では Auth.js の `session.user.id` ベースで DB を読み書きします。
-- `demo-user` は seed / 過去データ用として残していますが、ログインユーザーへ自動移行はしません。
+- `demo-user` はローカル開発fixtureとして残し、ログインユーザーへ移行・コピーしません。
 - 初回ユーザーは Dashboard から、明示操作でスターターデータを作成できます。
 - E2E テストは `DATABASE_URL` の DB を操作するため、本番 DB に向けて実行しないでください。
 - AI 機能はまだ未実装です。
