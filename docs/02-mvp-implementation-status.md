@@ -2,17 +2,17 @@
 
 ## このドキュメントの目的
 
-このドキュメントは、AI Job Hunt OS のモック MVP から DB 操作、Auth.js 基盤導入、v0.4.0 相当の認証後手動確認まで、現在どこまで実装されているかを整理するためのメモです。
+このドキュメントは、AI Job Hunt OS のモック MVP から DB 操作、Auth.js 基盤導入、v0.5.0 相当の Proxy と E2E smoke test まで、現在どこまで実装されているかを整理するためのメモです。
 
 最初はモックデータを使って、企業一覧、企業詳細、企業に紐づくタスク、面接ログを画面で確認できる状態にしました。その後、Prisma 7 + PostgreSQL + Docker Compose を導入し、現在は Auth.js / GitHub OAuth の認証基盤を入れ、Company を中心に Task と InterviewLog を紐づけてログインユーザー単位で DB 操作できる状態まで進んでいます。
 
 Company は一覧、詳細、作成、編集、削除まで実装済みです。Task は企業詳細画面内で表示・作成・更新・削除でき、Task 一覧画面でもログインユーザーの全 Task を未完了 / 完了に分けて確認できます。また、Task 一覧画面から Company に紐づかない一般 Task を作成し、Task 一覧画面から一般 Task と Company 紐づき Task の編集・削除もできます。InterviewLog は、まず企業詳細画面内で表示・作成・更新・削除できる最小構成にしています。Dashboard では DB 由来の集計を表示できる状態になっています。
 
-Auth.js / GitHub OAuth 基盤、`/login`、サインイン / サインアウト action、Auth.js session user ID に基づく owner scoping は導入済みです。`src/lib/current-user.ts` の `getCurrentUserId()` は Auth.js の `auth()` から `session.user.id` を取得し、未ログイン時は `/login` に redirect します。Company / Task / InterviewLog / Dashboard はログインユーザーごとにデータが分離されます。
+Auth.js / GitHub OAuth 基盤、`/login`、サインイン / サインアウト action、Auth.js session user ID に基づく owner scoping は導入済みです。`src/proxy.ts` で Dashboard / Company / Task 画面を保護し、`src/lib/current-user.ts` の `getCurrentUserId()` でもデータ取得・更新時に `session.user.id` を確認します。Company / Task / InterviewLog / Dashboard はログインユーザーごとにデータが分離されます。
 
 v0.4.0 相当では、未ログイン時の `/login` redirect、ログイン / ログアウト、Company CRUD、Task CRUD、InterviewLog CRUD、Dashboard 集計、`demo-user` とログインユーザーのデータが混ざらないことを手動確認済みです。詳細は `docs/auth-verification.md` にまとめています。
 
-ただし、middleware/proxy による全画面保護、demo-user データのログインユーザーへの自動移行、初期データ作成フロー、AI 機能、Task の Company 紐づけ変更、Company 選択つき Task 作成、検索・フィルター・ソート、InterviewLog 一覧画面はまだ実装していません。seed による `demo-user` データは認証ユーザーとは別であり、ログイン直後に既存 seed データが見えないのは正常です。
+ただし、demo-user データのログインユーザーへの自動移行、初期データ作成フロー、AI 機能、Task の Company 紐づけ変更、Company 選択つき Task 作成、検索・フィルター・ソート、InterviewLog 一覧画面はまだ実装していません。seed による `demo-user` データは認証ユーザーとは別であり、ログイン直後に既存 seed データが見えないのは正常です。
 
 就活 GitHub として読まれたときに、現在の実装範囲、まだ実装していない範囲、次に進む候補が伝わることを目的にしています。
 
@@ -208,6 +208,7 @@ AI API、デプロイ環境、本格的なテスト基盤はまだ導入して�
 - Auth.js / GitHub OAuth でサインインできる
 - `getCurrentUserId()` で Auth.js session user ID を取得できる
 - 未ログイン時に `/login` へ redirect できる
+- Proxy により `/`、`/companies/:path*`、`/tasks/:path*` をまとめて保護できる
 - Company / Task / InterviewLog / Dashboard のデータをログインユーザーごとに分離できる
 - Task 一覧画面で、ログインユーザーの全 Task を未完了 / 完了に分けて表示できる
 - Task 一覧画面で、Task の完了/未完了を切り替えられる
@@ -227,7 +228,6 @@ Task は Company 詳細画面内で表示・作成・更新・削除でき、Tas
 
 以下はまだ実装していません。
 
-- middleware/proxy による全画面保護
 - demo-user データのログインユーザーへの自動移行
 - 初期データ作成フロー
 - AI 機能
@@ -252,7 +252,7 @@ AI Job Hunt OS では、Company を中心に Task と InterviewLog を紐づけ�
 
 Task と InterviewLog は、まず企業詳細画面内で表示・作成・更新・削除できる最小構成にしました。Company に紐づけて作成し、Task は完了/未完了の切り替えも確認できるようにしています。さらに Task 一覧画面では、ログインユーザーの全 Task を未完了 / 完了に分けて確認し、関連 Company へ移動できるようにしています。また、Task 一覧画面では Company に紐づかない一般 Task も作成でき、一般 Task と Company 紐づき Task の違いを確認しながら編集・削除できます。一方で、Task の Company 紐づけ変更、Company 選択つき Task 作成、検索・フィルター・ソート、InterviewLog 一覧画面はまだ未実装です。
 
-Auth.js / GitHub OAuth の基盤を導入し、`getCurrentUserId()` は Auth.js session user ID を返す形に切り替えました。これにより、Company / Task / InterviewLog / Dashboard はログインユーザーごとのデータ取得になっています。ただし、middleware/proxy による全画面保護、初期データ作成フロー、demo-user データの自動移行はまだ未実装です。
+Auth.js / GitHub OAuth の基盤を導入し、`getCurrentUserId()` は Auth.js session user ID を返す形に切り替えました。これにより、Company / Task / InterviewLog / Dashboard はログインユーザーごとのデータ取得になっています。さらに、Next.js 16 Proxy でアプリ画面への未ログインアクセスを早期に redirect します。初期データ作成フローと demo-user データの自動移行はまだ未実装です。
 
 ### Company 削除について
 
@@ -272,9 +272,8 @@ Task 一覧画面から作成する一般 Task も `companyId: null` として�
 次に進む候補は以下です。
 
 - README / docs の継続整備
-- middleware/proxy による全画面保護
 - 初期データ作成フロー、または demo-user データ移行方針の検討
-- 最低限のテスト導入
+- 認証済み CRUD を含むテスト拡充
 - デプロイ準備
 - Task の Company 紐づけ変更、Company 選択つき Task 作成の検討
 - InterviewLog 一覧画面の検討

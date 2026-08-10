@@ -13,11 +13,19 @@ test.describe("auth boundary", () => {
     ).toBeVisible();
   });
 
-  for (const path of ["/", "/companies", "/tasks"]) {
+  for (const path of ["/", "/companies", "/companies/new", "/tasks"]) {
     test(`redirects ${path} to /login when signed out`, async ({ page }) => {
       await page.goto(path);
 
-      await expect(page).toHaveURL(/\/login$/);
+      await expect(page).toHaveURL((url) => {
+        const callbackUrl = url.searchParams.get("callbackUrl");
+
+        return (
+          url.pathname === "/login" &&
+          callbackUrl !== null &&
+          new URL(callbackUrl).pathname === path
+        );
+      });
       await expect(
         page.getByRole("heading", { name: "ログイン" }),
       ).toBeVisible();

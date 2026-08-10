@@ -28,9 +28,9 @@ AI Job Hunt OS は、就職活動に必要な情報を一元管理する Web ア
 
 v1.0 MVP では、応募管理の基本体験に絞ります。
 
-初期フェーズではモックデータで画面構成と情報設計を確認しました。現在は Next.js App Router + TypeScript + Tailwind CSS に加えて、Prisma 7 + PostgreSQL + Docker Compose によるローカル DB 保存へ移行済みです。また、Auth.js / GitHub OAuth の基盤を導入し、ログインユーザーごとに Company / Task / InterviewLog / Dashboard のデータを分離する動作を手動確認済みです。
+初期フェーズではモックデータで画面構成と情報設計を確認しました。現在は Next.js App Router + TypeScript + Tailwind CSS に加えて、Prisma 7 + PostgreSQL + Docker Compose によるローカル DB 保存へ移行済みです。また、Auth.js / GitHub OAuth の基盤と Next.js 16 Proxy による画面保護を導入し、ログインユーザーごとに Company / Task / InterviewLog / Dashboard のデータを分離する動作を手動確認済みです。
 
-ただし、middleware/proxy による全画面保護、初期データ作成フロー、demo-user データのログインユーザーへの自動移行はまだ未実装です。seed の `demo-user` データは認証ユーザーとは別であり、ログイン直後に既存 seed データが見えないのは正常です。
+ただし、初期データ作成フローと demo-user データのログインユーザーへの自動移行はまだ未実装です。seed の `demo-user` データは認証ユーザーとは別であり、ログイン直後に既存 seed データが見えないのは正常です。
 
 - 応募先企業の管理
 - 企業ごとの選考ステータス
@@ -42,6 +42,7 @@ v1.0 MVP では、応募管理の基本体験に絞ります。
 - PostgreSQL へのデータ保存
 - Prisma を使った基本的な CRUD
 - Auth.js session user ID に基づく owner scoping
+- Next.js 16 Proxy によるアプリ画面の認証境界
 
 MVP の目的は、就活情報を一覧し、次に何をすべきか判断できる状態を作ることです。
 
@@ -49,7 +50,6 @@ MVP の目的は、就活情報を一覧し、次に何をすべきか判断で�
 
 以下は現在未実装です。
 
-- middleware/proxy による全画面保護
 - demo-user データのログインユーザーへの自動移行
 - 初期データ作成フロー
 - AI による文章生成
@@ -59,7 +59,7 @@ MVP の目的は、就活情報を一覧し、次に何をすべきか判断で�
 - デプロイ
 - 本格的なテスト整備
 
-Auth.js / GitHub OAuth 基盤、`/login`、サインイン / サインアウト action は導入済みです。ただし、全画面を middleware/proxy で保護するところまではまだ進めていません。
+Auth.js / GitHub OAuth 基盤、`/login`、サインイン / サインアウト action、Dashboard / Company / Task 画面の Proxy 保護は導入済みです。
 
 ## v1.0 でやらないこと
 
@@ -124,7 +124,6 @@ AI は開発補助として使いますが、設計意図、実装範囲、優�
 
 - InterviewLog 一覧画面を後続フェーズでどう扱うか
 - 検索・フィルター・ソートの優先度
-- middleware/proxy による全画面保護の範囲
 - 初期データ作成フロー、または demo-user データ移行方針
 - AI 機能で最初に実装するユースケース
 - AI API に渡すデータの範囲と個人情報の扱い
