@@ -8,10 +8,11 @@
 ![Docker Compose](https://img.shields.io/badge/Docker_Compose-2496ED?style=flat-square&logo=docker&logoColor=white)
 ![Auth.js / NextAuth](https://img.shields.io/badge/Auth.js%20%2F%20NextAuth-000000?style=flat-square)
 ![GitHub OAuth](https://img.shields.io/badge/GitHub_OAuth-181717?style=flat-square&logo=github&logoColor=white)
+[![CI](https://github.com/tomokitatsuda/ai-job-hunt-os/actions/workflows/ci.yml/badge.svg)](https://github.com/tomokitatsuda/ai-job-hunt-os/actions/workflows/ci.yml)
 
 AI Job Hunt OS は、就職活動の応募状況、選考予定、タスク、面接ログを一元管理するための Web アプリです。
 
-現在は v0.7.0 相当として、認証ユーザー単位の owner scoping と Next.js 16 Proxy に加え、初回ユーザー向けオンボーディングと認証済み CRUD の自動 E2E テストまで導入済みです。
+現在は v0.8.0 相当として、初回ユーザー向けオンボーディング、認証済み CRUD の自動 E2E テスト、PostgreSQL を含む GitHub Actions CI まで導入済みです。
 
 ## 概要
 
@@ -50,6 +51,8 @@ AI Job Hunt OS では、就活に必要な情報を Company を中心に整理�
 - Company も Task もない初回ユーザー向けのオンボーディング表示
 - Company 1 件と Task 2 件を安全に作るスターターデータ作成 action
 - Playwright による未認証境界・認証済み CRUD・オンボーディングの E2E テスト
+- Chromium / WebKit の2ブラウザで合計18件の E2E テスト
+- GitHub Actions による migration・lint・schema検証・build・E2E の自動実行
 
 Task は Company 詳細画面内で作成・編集・削除でき、Task 一覧画面ではログインユーザーの全 Task を未完了 / 完了に分けて確認し、完了状態を切り替えられます。また、Task 一覧画面の作成フォームでは Company を任意選択でき、未選択なら一般 Task、選択済みなら Company 紐づき Task として保存します。Task 編集画面では title、memo、dueDate に加えて Company の紐づけ先を変更でき、Company との紐づけ解除も可能です。
 
@@ -97,7 +100,7 @@ Company の基本情報と、その Company に紐づく Task / InterviewLog を
 - InterviewLog 一覧画面
 - 検索・フィルター・ソート
 - デプロイ
-- CI 連携、複数ブラウザなどのテスト拡充
+- GitHub OAuth の実ログインを含む外部サービス連携テスト
 
 Auth.js / GitHub OAuth の基盤、`/login`、サインイン / サインアウト action、アプリ画面を対象にした Proxy、初回ユーザー向けスターターデータ作成フローは導入済みです。
 
@@ -124,6 +127,8 @@ DB 接続は Prisma 7 前提の構成です。`DATABASE_URL` は `prisma.config.
 - Prisma 7
 - PostgreSQL
 - Docker Compose
+- Playwright
+- GitHub Actions
 - ESLint
 
 今後の候補として、AI 機能には OpenAI API などの利用を想定しています。
@@ -152,11 +157,12 @@ npm run dev
 
 ## E2E test
 
-Playwright で Chromium を対象に 9 本の E2E テストを実行します。5 本は `/login` と未ログイン時の認証境界、4 本は初回オンボーディング、Company CRUD、Task CRUD と Company 紐づけ変更、InterviewLog CRUD を確認します。認証済みテストは一時的な User と Auth.js Session を DB に作成し、ブラウザへセッション Cookie を設定するため、アプリ側にテスト専用の認証回避を入れていません。各テストのデータは終了時に削除します。
+Playwright で Chromium と WebKit を対象に、各9本、合計18本の E2E テストを実行します。各ブラウザの5本は `/login` と未ログイン時の認証境界、4本は初回オンボーディング、Company CRUD、Task CRUD と Company 紐づけ変更、InterviewLog CRUD を確認します。認証済みテストは一時的な User と Auth.js Session を DB に作成し、ブラウザへセッション Cookie を設定するため、アプリ側にテスト専用の認証回避を入れていません。各テストのデータは終了時に削除します。
 
 ```bash
 docker compose up -d
 npx prisma migrate dev
+npx playwright install chromium webkit
 npm run test:e2e
 ```
 
@@ -165,9 +171,13 @@ npm run test:e2e
 ```bash
 npm run test:e2e:auth-boundary
 npm run test:e2e:authenticated
+npm run test:e2e:chromium
+npm run test:e2e:webkit
 ```
 
-GitHub OAuth の実ログイン完走、CI 連携、WebKit / Safari 相当の自動テストはまだ含めていません。E2E は `DATABASE_URL` の User / Session / Company / Task / InterviewLog を操作するため、ローカルの開発・テスト用 DB で実行してください。
+`.github/workflows/ci.yml` は `main` への push と pull request で PostgreSQL 17 の service container を起動し、migration、lint、Prisma schema validation、production build、Chromium / WebKit E2E を自動実行します。結果にかかわらず Playwright の HTML report を artifact として14日間保存します。
+
+GitHub OAuth プロバイダーとの実ログイン完走はまだ含めていません。E2E は `DATABASE_URL` の User / Session / Company / Task / InterviewLog を操作するため、デフォルトでは localhost の DB だけを許可します。隔離済みのremote test DBを使う場合だけ、明示的に `ALLOW_REMOTE_E2E_DATABASE=true` を設定してください。
 
 詳しい手順や確認コマンドは [docs/setup.md](docs/setup.md) を参照してください。`.env.example` の `DATABASE_URL` はローカル開発用 Docker 環境のサンプルです。`AUTH_SECRET`、`AUTH_GITHUB_ID`、`AUTH_GITHUB_SECRET` はプレースホルダーのみを置いています。実際の `.env` / `.env.local`、本番 DB や個人用 DB の接続情報、OAuth secret、API キー、個人情報は commit しないでください。
 
@@ -180,11 +190,10 @@ AI 機能はまだ未実装です。将来的には、蓄積した Company / Tas
 ## 今後の予定
 
 1. README / docs の継続整備
-2. CI 連携と複数ブラウザを含むテスト拡充
-3. demo-user データ移行方針の検討
-4. デプロイ準備
-5. InterviewLog 一覧画面の検討
-6. 検索・フィルター・ソートの追加
-7. AI 機能の段階的な追加
+2. demo-user データ移行方針の検討
+3. デプロイ準備
+4. InterviewLog 一覧画面の検討
+5. 検索・フィルター・ソートの追加
+6. AI 機能の段階的な追加
 
 詳細な設計方針は [docs/00-project-overview.md](docs/00-project-overview.md)、現在の実装状況は [docs/02-mvp-implementation-status.md](docs/02-mvp-implementation-status.md)、認証後の確認項目は [docs/auth-verification.md](docs/auth-verification.md) にまとめています。

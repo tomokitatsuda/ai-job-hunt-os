@@ -46,6 +46,7 @@ Company と Task がない初回ユーザーには Dashboard でセットアッ�
 - Next.js 16 Proxy によるアプリ画面の認証境界
 - 初回ユーザー向けオンボーディングとスターターデータ作成
 - Playwright による未認証境界と認証済み主要 CRUD の E2E テスト
+- Chromium / WebKit と GitHub Actions による継続的な自動検証
 
 MVP の目的は、就活情報を一覧し、次に何をすべきか判断できる状態を作ることです。
 
@@ -59,7 +60,7 @@ MVP の目的は、就活情報を一覧し、次に何をすべきか判断で�
 - InterviewLog 一覧画面
 - 検索・フィルター・ソート
 - デプロイ
-- CI 連携、複数ブラウザなどのテスト拡充
+- GitHub OAuth の実ログインを含む外部サービス連携テスト
 
 Auth.js / GitHub OAuth 基盤、`/login`、サインイン / サインアウト action、Dashboard / Company / Task 画面の Proxy 保護は導入済みです。
 
@@ -90,6 +91,8 @@ v1.0 では、以下は実装しません。
 - `@prisma/adapter-pg`: Prisma 7 の PostgreSQL adapter
 - Auth.js / NextAuth (`next-auth@^5.0.0-beta.31`): GitHub OAuth のサインイン基盤
 - `@auth/prisma-adapter@^2.11.2`: Auth.js と Prisma の接続
+- Playwright: Chromium / WebKit の E2E テスト
+- GitHub Actions: PostgreSQL service container を含む CI
 
 `DATABASE_URL` は `prisma.config.ts` と `.env` で扱います。Prisma 7 前提のため、`schema.prisma` の `datasource` には `url = env("DATABASE_URL")` を書かない方針です。
 
@@ -130,4 +133,4 @@ AI は開発補助として使いますが、設計意図、実装範囲、優�
 - AI 機能で最初に実装するユースケース
 - AI API に渡すデータの範囲と個人情報の扱い
 - デプロイ先
-- CI と複数ブラウザを含むテスト範囲
+- GitHub OAuth 実ログインなど外部サービスを含むテスト範囲

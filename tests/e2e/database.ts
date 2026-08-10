@@ -9,6 +9,19 @@ if (!databaseUrl) {
   throw new Error("DATABASE_URL is required for authenticated E2E tests.");
 }
 
+const databaseHost = new URL(databaseUrl).hostname;
+const localDatabaseHosts = new Set(["localhost", "127.0.0.1", "::1"]);
+
+if (
+  !localDatabaseHosts.has(databaseHost) &&
+  process.env.ALLOW_REMOTE_E2E_DATABASE !== "true"
+) {
+  throw new Error(
+    "Authenticated E2E tests only use a local database by default. " +
+      "Set ALLOW_REMOTE_E2E_DATABASE=true only for an isolated remote test database.",
+  );
+}
+
 const pool = new Pool({
   connectionString: databaseUrl,
   allowExitOnIdle: true,

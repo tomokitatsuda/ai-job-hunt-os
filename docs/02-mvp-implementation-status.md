@@ -2,7 +2,7 @@
 
 ## このドキュメントの目的
 
-このドキュメントは、AI Job Hunt OS のモック MVP から DB 操作、Auth.js 基盤導入、v0.7.0 相当の初回オンボーディングと認証済み E2E テストまで、現在どこまで実装されているかを整理するためのメモです。
+このドキュメントは、AI Job Hunt OS のモック MVP から DB 操作、Auth.js 基盤導入、v0.8.0 相当の初回オンボーディング、認証済み E2E、GitHub Actions CI まで、現在どこまで実装されているかを整理するためのメモです。
 
 最初はモックデータを使って、企業一覧、企業詳細、企業に紐づくタスク、面接ログを画面で確認できる状態にしました。その後、Prisma 7 + PostgreSQL + Docker Compose を導入し、現在は Auth.js / GitHub OAuth の認証基盤を入れ、Company を中心に Task と InterviewLog を紐づけてログインユーザー単位で DB 操作できる状態まで進んでいます。
 
@@ -123,9 +123,11 @@ seed による `demo-user` は、過去データやローカル確認用のユ�
 - PostgreSQL
 - Docker Compose
 - `@prisma/adapter-pg`
+- Playwright
+- GitHub Actions
 - ESLint
 
-AI API とデプロイ環境はまだ導入していません。テストは Playwright + Chromium で認証境界と認証済み主要 CRUD をカバーし、今後 CI と複数ブラウザへ広げます。
+AI API とデプロイ環境はまだ導入していません。テストは Playwright + Chromium / WebKit で認証境界と認証済み主要 CRUD をカバーし、GitHub Actions でも PostgreSQL migration、lint、schema検証、buildと合わせて実行します。
 
 ## 4. 初期モックデータ構成
 
@@ -226,6 +228,7 @@ AI API とデプロイ環境はまだ導入していません。テストは Pla
 - 企業一覧から企業詳細へ移動できる
 - 存在しない企業 ID にアクセスした場合は 404 になる
 - Playwright で未認証の redirect、初回オンボーディング、Company / Task / InterviewLog CRUD を自動確認できる
+- GitHub Actions で PostgreSQL を起動し、Chromium / WebKit の合計18件を継続的に確認できる
 
 Task は Company 詳細画面内で表示・作成・更新・削除でき、Task 一覧画面ではログインユーザーの全 Task の確認、完了状態の切り替え、Company 選択つき作成、紐づけ変更、編集・削除ができます。InterviewLog は、まず企業詳細画面内で表示・作成・更新・削除できる最小構成にしています。
 
@@ -238,7 +241,7 @@ Task は Company 詳細画面内で表示・作成・更新・削除でき、Tas
 - 検索・フィルター・ソート
 - InterviewLog 一覧画面
 - デプロイ
-- CI 連携、WebKit などの複数ブラウザテスト
+- GitHub OAuth の実ログインを含む外部サービス連携テスト
 
 この段階では、完成済みのアプリとしてではなく、モック MVP から DB 操作、Auth.js 基盤導入へ段階的に進めている途中として扱います。
 
@@ -274,7 +277,6 @@ Task 一覧画面から作成する一般 Task は `companyId: null`、Company �
 次に進む候補は以下です。
 
 - README / docs の継続整備
-- CI 連携と複数ブラウザを含むテスト拡充
 - demo-user データ移行方針の検討
 - デプロイ準備
 - InterviewLog 一覧画面の検討
@@ -293,6 +295,7 @@ Task 一覧画面から作成する一般 Task は `companyId: null`、Company �
 - Dashboard では DB 集計により、応募状況、未完了タスク、直近予定を一画面で確認できるようにした
 - 初回ユーザーには選べるオンボーディングを出し、明示操作なしにデータを混ぜない設計にした
 - 一時 User / Session を作る Playwright fixture により、認証回避を実装せず主要 CRUD を自動確認した
+- Chromium / WebKit の両方を PostgreSQL service container つき GitHub Actions で実行できるようにした
 - demo user 固定で DB 操作を先に検証した後、Auth.js session user ID ベースの owner scoping に切り替えた
 - seed の demo-user データは認証ユーザーとは別であり、ログイン直後に見えないのは正常な状態として整理した
 - seed により、ローカル開発環境で再現できるサンプルデータを用意した

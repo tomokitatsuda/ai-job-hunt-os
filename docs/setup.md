@@ -119,17 +119,35 @@ E2E テストは `DATABASE_URL` の PostgreSQL に一時 User / Session と CRUD
 ```bash
 docker compose up -d
 npx prisma migrate dev
+npx playwright install chromium webkit
 npm run test:e2e
 ```
 
-Chromium で、未認証の画面保護 5 本と、初回オンボーディング・Company・Task・InterviewLog の認証済み操作 4 本を確認します。Playwright の `webServer` が開発サーバーを自動起動するため、別ターミナルで `npm run dev` を起動する必要はありません。
+Chromium と WebKit のそれぞれで、未認証の画面保護 5 本と、初回オンボーディング・Company・Task・InterviewLog の認証済み操作 4 本を確認します。Playwright の `webServer` が開発サーバーを自動起動するため、別ターミナルで `npm run dev` を起動する必要はありません。
 
 対象を分けて実行する場合は、次のコマンドを使います。
 
 ```bash
 npm run test:e2e:auth-boundary
 npm run test:e2e:authenticated
+npm run test:e2e:chromium
+npm run test:e2e:webkit
 ```
+
+認証済みE2Eは誤操作防止のためlocalhostのDBだけをデフォルトで許可します。remote test DBを使う場合は、必ず本番から隔離したDBであることを確認してから `ALLOW_REMOTE_E2E_DATABASE=true` を設定してください。
+
+## GitHub Actions CI
+
+`.github/workflows/ci.yml` は `main` への push、`main` 向け pull request、手動実行で起動します。GitHub Actions内に使い捨てのPostgreSQL 17を用意し、次を順番に実行します。
+
+1. `npm ci`
+2. `npx prisma migrate deploy`
+3. `npm run lint`
+4. `npx prisma validate`
+5. `npm run build`
+6. Chromium / WebKit のインストールと `npm run test:e2e`
+
+CIでは先にbuildしたアプリを `npm run start` で起動してE2Eを実行します。localhostのproduction serverをAuth.jsに許可する `AUTH_TRUST_HOST=true` もCI内だけで設定します。Playwright HTML reportはGitHub Actionsのartifactとして14日間保存されます。CI用のDB・Auth.js・GitHub OAuth値はworkflow内の使い捨て／placeholderであり、実際のOAuth secretは使用しません。
 
 ## よくある確認コマンド
 

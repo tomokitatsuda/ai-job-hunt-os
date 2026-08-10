@@ -33,7 +33,7 @@ seed の `demo-user` は、過去データやローカル seed 確認用のユ�
 
 ## 自動テストの範囲
 
-`npm run test:e2e` は Chromium で 9 本のテストを実行します。
+`npm run test:e2e` は Chromium と WebKit で各9本、合計18本のテストを実行します。
 
 - 未ログイン時の `/`、`/companies`、`/companies/new`、`/tasks` の redirect と callback URL
 - `/login` の表示
@@ -43,6 +43,8 @@ seed の `demo-user` は、過去データやローカル seed 確認用のユ�
 - InterviewLog の作成・編集・削除
 
 認証済みテストでは、テストごとに一時 User と Auth.js Session を DB に作り、ブラウザに `authjs.session-token` Cookie を設定します。アプリ本体の Auth.js と owner scoping を通り、終了時にはそのユーザーに属するデータを削除します。GitHub OAuth プロバイダーとの実ログイン完走は自動テストの対象外です。
+
+GitHub Actions では専用の PostgreSQL service container にmigrationを適用し、lint、Prisma schema validation、production buildに続けて同じ18本を1 workerで実行します。ローカルの `npm run test:e2e` は通常の並列実行です。
 
 ## 秘密情報チェック
 
@@ -54,5 +56,4 @@ seed の `demo-user` は、過去データやローカル seed 確認用のユ�
 ## まだ自動化していないこと
 
 - GitHub OAuth プロバイダーとの実ログイン完走は自動化していない
-- CI、WebKit / Safari 相当、複数ブラウザでの実行はまだ整備していない
 - demo-user データのログインユーザーへの自動移行はまだ実装していない

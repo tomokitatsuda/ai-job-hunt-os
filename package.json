@@ -8,6 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "test:e2e": "playwright test",
+    "test:e2e:chromium": "playwright test --project=chromium",
+    "test:e2e:webkit": "playwright test --project=webkit",
     "test:e2e:auth-boundary": "playwright test tests/e2e/auth.spec.ts",
     "test:e2e:authenticated": "playwright test tests/e2e/authenticated-crud.spec.ts",
     "postinstall": "prisma generate"
