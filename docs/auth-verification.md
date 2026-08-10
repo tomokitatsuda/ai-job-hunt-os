@@ -15,7 +15,8 @@ seed の `demo-user` は、過去データやローカル seed 確認用のユ�
 - ログイン後に Company を作成、表示、編集、削除できる
 - ログイン後に Company 詳細画面内の Task を作成、完了/未完了切り替え、編集、削除できる
 - ログイン後に Task 一覧画面で全 Task を未完了 / 完了に分けて確認できる
-- ログイン後に Task 一覧画面で一般 Task を作成、編集、削除できる
+- ログイン後に Task 一覧画面で一般 Task と Company 紐づき Task を作成、編集、削除できる
+- Task 編集時に Company の紐づけ変更と解除ができる
 - ログイン後に Company 詳細画面内の InterviewLog を作成、表示、編集、削除できる
 - Dashboard の応募企業数、未完了 Task 数、直近予定、選考ステータス別件数などがログインユーザーのデータで集計される
 - seed の `demo-user` データと GitHub OAuth でログインしたユーザーのデータが混ざらない

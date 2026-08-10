@@ -2,17 +2,17 @@
 
 ## このドキュメントの目的
 
-このドキュメントは、AI Job Hunt OS のモック MVP から DB 操作、Auth.js 基盤導入、v0.5.0 相当の Proxy と E2E smoke test まで、現在どこまで実装されているかを整理するためのメモです。
+このドキュメントは、AI Job Hunt OS のモック MVP から DB 操作、Auth.js 基盤導入、v0.6.0 相当の Task と Company の紐づけ操作まで、現在どこまで実装されているかを整理するためのメモです。
 
 最初はモックデータを使って、企業一覧、企業詳細、企業に紐づくタスク、面接ログを画面で確認できる状態にしました。その後、Prisma 7 + PostgreSQL + Docker Compose を導入し、現在は Auth.js / GitHub OAuth の認証基盤を入れ、Company を中心に Task と InterviewLog を紐づけてログインユーザー単位で DB 操作できる状態まで進んでいます。
 
-Company は一覧、詳細、作成、編集、削除まで実装済みです。Task は企業詳細画面内で表示・作成・更新・削除でき、Task 一覧画面でもログインユーザーの全 Task を未完了 / 完了に分けて確認できます。また、Task 一覧画面から Company に紐づかない一般 Task を作成し、Task 一覧画面から一般 Task と Company 紐づき Task の編集・削除もできます。InterviewLog は、まず企業詳細画面内で表示・作成・更新・削除できる最小構成にしています。Dashboard では DB 由来の集計を表示できる状態になっています。
+Company は一覧、詳細、作成、編集、削除まで実装済みです。Task は企業詳細画面内で表示・作成・更新・削除でき、Task 一覧画面でもログインユーザーの全 Task を未完了 / 完了に分けて確認できます。また、Task 一覧画面から Company を任意選択して Task を作成し、編集時に Company の紐づけ変更・解除もできます。InterviewLog は、まず企業詳細画面内で表示・作成・更新・削除できる最小構成にしています。Dashboard では DB 由来の集計を表示できる状態になっています。
 
 Auth.js / GitHub OAuth 基盤、`/login`、サインイン / サインアウト action、Auth.js session user ID に基づく owner scoping は導入済みです。`src/proxy.ts` で Dashboard / Company / Task 画面を保護し、`src/lib/current-user.ts` の `getCurrentUserId()` でもデータ取得・更新時に `session.user.id` を確認します。Company / Task / InterviewLog / Dashboard はログインユーザーごとにデータが分離されます。
 
 v0.4.0 相当では、未ログイン時の `/login` redirect、ログイン / ログアウト、Company CRUD、Task CRUD、InterviewLog CRUD、Dashboard 集計、`demo-user` とログインユーザーのデータが混ざらないことを手動確認済みです。詳細は `docs/auth-verification.md` にまとめています。
 
-ただし、demo-user データのログインユーザーへの自動移行、初期データ作成フロー、AI 機能、Task の Company 紐づけ変更、Company 選択つき Task 作成、検索・フィルター・ソート、InterviewLog 一覧画面はまだ実装していません。seed による `demo-user` データは認証ユーザーとは別であり、ログイン直後に既存 seed データが見えないのは正常です。
+ただし、demo-user データのログインユーザーへの自動移行、初期データ作成フロー、AI 機能、検索・フィルター・ソート、InterviewLog 一覧画面はまだ実装していません。seed による `demo-user` データは認証ユーザーとは別であり、ログイン直後に既存 seed データが見えないのは正常です。
 
 就活 GitHub として読まれたときに、現在の実装範囲、まだ実装していない範囲、次に進む候補が伝わることを目的にしています。
 
@@ -24,7 +24,7 @@ Dashboard 画面です。
 
 DB からログインユーザーの Company / Task / InterviewLog を読み込み、応募企業数、未完了 Task 数、直近の Task 締切、直近の面接日、選考ステータス別件数、志望度の高い Company、直近の Task / InterviewLog を表示しています。
 
-「企業を見る」「タスクを見る」「企業を追加」「一般タスクを追加」の導線も置いています。
+「企業を見る」「タスクを見る」「企業を追加」「タスクを追加」の導線も置いています。
 
 ### `/tasks`
 
@@ -34,11 +34,11 @@ DB からログインユーザーの全 Task を読み込み、未完了 Task �
 
 この画面から、Task の完了/未完了を切り替えられます。また、関連 Company がある Task では Company 詳細画面へのリンクを表示します。
 
-この画面から、Company に紐づかない一般 Task を作成できます。一般 Task は `companyId: null` として保存します。
+この画面から、Company を任意選択して Task を作成できます。未選択時は `companyId: null` の一般 Task として保存します。
 
-この画面では、一般 Task と Company 紐づき Task の違いが分かる説明・表示を置いています。また、一般 Task と Company 紐づき Task の title、memo / description、dueDate を編集でき、Task 削除もできます。
+この画面では、一般 Task と Company 紐づき Task の違いが分かる説明・表示を置いています。また、title、memo、dueDate、Company の紐づけ先を編集でき、Task 削除もできます。
 
-現時点では、Task の Company 紐づけ変更と、Company 選択つき Task 作成はまだ実装していません。
+作成・編集の Server Action は、フォームから送られた Company ID がログインユーザー所有かを再確認してから保存します。
 
 ### `/companies`
 
@@ -214,6 +214,8 @@ AI API、デプロイ環境、本格的なテスト基盤はまだ導入して�
 - Task 一覧画面で、Task の完了/未完了を切り替えられる
 - Task 一覧画面で、関連 Company へのリンクを表示できる
 - Task 一覧画面で、Company に紐づかない一般 Task を作成できる
+- Task 一覧画面で、任意の Company を選択して Task を作成できる
+- Task 編集画面で、Company の紐づけ変更・解除ができる
 - Task 一覧画面で、一般 Task と Company 紐づき Task の違いを確認できる
 - Task 一覧画面で、一般 Task と Company 紐づき Task を編集・削除できる
 - 企業ごとの面接ログを DB から表示できる
@@ -222,7 +224,7 @@ AI API、デプロイ環境、本格的なテスト基盤はまだ導入して�
 - 企業一覧から企業詳細へ移動できる
 - 存在しない企業 ID にアクセスした場合は 404 になる
 
-Task は Company 詳細画面内で表示・作成・更新・削除でき、Task 一覧画面ではログインユーザーの全 Task の確認、完了状態の切り替え、一般 Task の作成、Task の編集・削除ができます。InterviewLog は、まず企業詳細画面内で表示・作成・更新・削除できる最小構成にしています。
+Task は Company 詳細画面内で表示・作成・更新・削除でき、Task 一覧画面ではログインユーザーの全 Task の確認、完了状態の切り替え、Company 選択つき作成、紐づけ変更、編集・削除ができます。InterviewLog は、まず企業詳細画面内で表示・作成・更新・削除できる最小構成にしています。
 
 ## 6. まだ実装していないこと
 
@@ -231,8 +233,6 @@ Task は Company 詳細画面内で表示・作成・更新・削除でき、Tas
 - demo-user データのログインユーザーへの自動移行
 - 初期データ作成フロー
 - AI 機能
-- Task の Company 紐づけ変更
-- Company 選択つき Task 作成
 - 検索・フィルター・ソート
 - InterviewLog 一覧画面
 - デプロイ
@@ -250,7 +250,7 @@ AI Job Hunt OS では、Company を中心に Task と InterviewLog を紐づけ�
 
 その後、Prisma + PostgreSQL に移行し、`/companies` と `/companies/[id]` は DB 由来のデータを表示するようにしました。Company は中心データとして CRUD まで進め、応募先企業を登録、確認、更新、削除できる状態にしています。
 
-Task と InterviewLog は、まず企業詳細画面内で表示・作成・更新・削除できる最小構成にしました。Company に紐づけて作成し、Task は完了/未完了の切り替えも確認できるようにしています。さらに Task 一覧画面では、ログインユーザーの全 Task を未完了 / 完了に分けて確認し、関連 Company へ移動できるようにしています。また、Task 一覧画面では Company に紐づかない一般 Task も作成でき、一般 Task と Company 紐づき Task の違いを確認しながら編集・削除できます。一方で、Task の Company 紐づけ変更、Company 選択つき Task 作成、検索・フィルター・ソート、InterviewLog 一覧画面はまだ未実装です。
+Task と InterviewLog は、まず企業詳細画面内で表示・作成・更新・削除できる最小構成にしました。Company に紐づけて作成し、Task は完了/未完了の切り替えも確認できるようにしています。さらに Task 一覧画面では、ログインユーザーの全 Task を未完了 / 完了に分けて確認し、関連 Company へ移動できるようにしています。作成・編集時には Company を任意選択でき、一般 Task への紐づけ解除も可能です。検索・フィルター・ソート、InterviewLog 一覧画面はまだ未実装です。
 
 Auth.js / GitHub OAuth の基盤を導入し、`getCurrentUserId()` は Auth.js session user ID を返す形に切り替えました。これにより、Company / Task / InterviewLog / Dashboard はログインユーザーごとのデータ取得になっています。さらに、Next.js 16 Proxy でアプリ画面への未ログインアクセスを早期に redirect します。初期データ作成フローと demo-user データの自動移行はまだ未実装です。
 
@@ -261,7 +261,7 @@ Auth.js / GitHub OAuth の基盤を導入し、`getCurrentUserId()` は Auth.js 
 
 Company に紐づく InterviewLog は削除します。一方で、Company に紐づく Task は削除せず、`companyId` を `null` にして一般タスクとして残します。これらの処理は transaction 内で実行しています。
 
-Task 一覧画面から作成する一般 Task も `companyId: null` として保存し、Company に紐づく Task と同じ `Task` モデルで扱います。
+Task 一覧画面から作成する一般 Task は `companyId: null`、Company 紐づき Task は所有者確認済みの `companyId` を保存し、同じ `Task` モデルで扱います。
 
 現時点では復元機能はありません。画面上では、削除すると元に戻せないことを明示しています。
 
@@ -275,7 +275,6 @@ Task 一覧画面から作成する一般 Task も `companyId: null` として�
 - 初期データ作成フロー、または demo-user データ移行方針の検討
 - 認証済み CRUD を含むテスト拡充
 - デプロイ準備
-- Task の Company 紐づけ変更、Company 選択つき Task 作成の検討
 - InterviewLog 一覧画面の検討
 - 検索・フィルター・ソート
 - AI 機能
@@ -288,7 +287,7 @@ Task 一覧画面から作成する一般 Task も `companyId: null` として�
 - Company / Task / InterviewLog の責務を分けた
 - Task と InterviewLog は Company に紐づく設計にした
 - Company は CRUD まで進め、Task と InterviewLog は企業詳細画面内で表示・作成・更新・削除できる最小構成にした
-- Task 一覧画面でログインユーザーの全 Task を未完了 / 完了に分けて確認し、完了状態を切り替え、一般 Task の作成と Task の編集・削除ができるようにした
+- Task 一覧画面で全 Task を確認し、Company 選択つき作成、紐づけ変更、完了状態の切り替え、編集・削除ができるようにした
 - Dashboard では DB 集計により、応募状況、未完了タスク、直近予定を一画面で確認できるようにした
 - demo user 固定で DB 操作を先に検証した後、Auth.js session user ID ベースの owner scoping に切り替えた
 - seed の demo-user データは認証ユーザーとは別であり、ログイン直後に見えないのは正常な状態として整理した

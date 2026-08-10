@@ -11,7 +11,7 @@
 
 AI Job Hunt OS は、就職活動の応募状況、選考予定、タスク、面接ログを一元管理するための Web アプリです。
 
-現在は v0.5.0 相当として、Auth.js / GitHub OAuth の認証基盤と `session.user.id` ベースの owner scoping に加え、Next.js 16 Proxy による保護画面への未ログインアクセスの早期 redirect と Playwright E2E smoke test を導入済みです。
+現在は v0.6.0 相当として、認証ユーザー単位の owner scoping と Next.js 16 Proxy に加え、Task 一覧画面での Company 選択つき Task 作成と、Task 編集時の Company 紐づけ変更まで導入済みです。
 
 ## 概要
 
@@ -37,8 +37,8 @@ AI Job Hunt OS では、就活に必要な情報を Company を中心に整理�
 - Task 一覧画面での未完了 / 完了 Task 表示
 - Task 一覧画面での完了 / 未完了切り替え
 - Task 一覧画面での関連 Company へのリンク表示
-- Task 一覧画面での一般 Task 作成
-- Task 一覧画面からの Task 編集・削除
+- Task 一覧画面での Company 選択つき Task 作成
+- Task 一覧画面からの Task 編集・削除・Company 紐づけ変更
 - Company 詳細画面内での InterviewLog 表示・作成・編集・削除
 - Prisma + PostgreSQL による DB 保存
 - Docker Compose によるローカル PostgreSQL 起動
@@ -48,7 +48,7 @@ AI Job Hunt OS では、就活に必要な情報を Company を中心に整理�
 - `getCurrentUserId()` による Auth.js session user ID の取得
 - Company / Task / InterviewLog / Dashboard のログインユーザー単位の owner scoping
 
-Task は Company 詳細画面内で作成・編集・削除でき、Task 一覧画面ではログインユーザーの全 Task を未完了 / 完了に分けて確認し、完了状態を切り替えられます。また、Task 一覧画面から Company に紐づかない一般 Task を作成できます。Task 一覧画面では、Company 紐づき Task と一般 Task の違いを確認しながら、title、memo / description、dueDate の編集と削除ができます。Task の Company 紐づけ変更、Company 選択つき Task 作成、InterviewLog 一覧画面は、実装済みとは扱っていません。
+Task は Company 詳細画面内で作成・編集・削除でき、Task 一覧画面ではログインユーザーの全 Task を未完了 / 完了に分けて確認し、完了状態を切り替えられます。また、Task 一覧画面の作成フォームでは Company を任意選択でき、未選択なら一般 Task、選択済みなら Company 紐づき Task として保存します。Task 編集画面では title、memo、dueDate に加えて Company の紐づけ先を変更でき、Company との紐づけ解除も可能です。
 
 `src/proxy.ts` は `/`、`/companies/:path*`、`/tasks/:path*` を保護し、未ログイン時は Auth.js の callback URL を付けて `/login` へ redirect します。Proxy は入口での早期チェックとして使い、データ取得・更新時には引き続き `getCurrentUserId()` で `session.user.id` を確認します。ログイン後に作成した Company / Task は、その認証ユーザーの `userId` に紐づきます。seed で作成される `demo-user` データは認証ユーザーとは別の過去データ用ユーザーであり、ログイン直後に既存 seed データが見えないのは正常です。
 
@@ -65,7 +65,7 @@ v0.4.0 相当では、未ログイン時の `/login` redirect、GitHub OAuth で
 ![Dashboard screenshot](docs/assets/screenshots/dashboard.png)
 
 DB に保存されたログインユーザーの応募状況を集計して、応募企業数、未完了 Task 数、直近の Task 締切、直近の面接日などを確認できる画面です。選考ステータス別件数や直近の Task / InterviewLog も、この画面から把握できます。
-Dashboard には「企業を見る」「タスクを見る」「企業を追加」「一般タスクを追加」の導線を置いています。
+Dashboard には「企業を見る」「タスクを見る」「企業を追加」「タスクを追加」の導線を置いています。
 
 ### Company 一覧
 
@@ -83,15 +83,13 @@ Company の基本情報と、その Company に紐づく Task / InterviewLog を
 
 ![Task list screenshot](docs/assets/screenshots/tasks.png)
 
-ログインユーザーの全 Task を未完了 / 完了に分けて確認できる画面です。Company に紐づく Task は関連 Company へのリンクを表示し、Company に紐づかない一般 Task は一般 Task として表示します。この画面から一般 Task の作成、Task の完了/未完了切り替え、編集、削除ができます。
+ログインユーザーの全 Task を未完了 / 完了に分けて確認できる画面です。Company に紐づく Task は関連 Company へのリンクを表示し、Company に紐づかない一般 Task は一般 Task として表示します。この画面から任意の Company を選んだ Task 作成、一般 Task 作成、完了/未完了切り替え、編集、Company 紐づけ変更、削除ができます。
 
 ## 現在未実装の機能
 
 - demo-user データのログインユーザーへの自動移行
 - 初期データ作成フロー
 - AI 機能
-- Task の Company 紐づけ変更
-- Company 選択つき Task 作成
 - InterviewLog 一覧画面
 - 検索・フィルター・ソート
 - デプロイ
@@ -107,7 +105,7 @@ Company を中心に Task と InterviewLog を紐づけています。就活で�
 
 ユーザー ID は `src/lib/current-user.ts` の `getCurrentUserId()` に集約しています。現在は Auth.js の `auth()` から `session.user.id` を取得し、未ログイン時は `/login` に redirect します。Proxy だけに認可を任せず、Company / Task は `userId`、InterviewLog は Company 経由で所有者確認する方針です。
 
-Company 削除時は物理削除です。紐づく InterviewLog は削除し、Task は `companyId` を `null` にして一般タスクとして残す設計にしています。Task 一覧画面から作成する一般 Task も `companyId: null` として保存し、Company 紐づき Task と同じ `Task` モデルで扱います。
+Company 削除時は物理削除です。紐づく InterviewLog は削除し、Task は `companyId` を `null` にして一般タスクとして残す設計にしています。Task 一覧画面では Company 選択を任意とし、未選択なら `companyId: null`、選択した場合は owner scoping を確認した Company ID を保存します。編集時も同じ所有者確認を行います。
 
 DB 接続は Prisma 7 前提の構成です。`DATABASE_URL` は `prisma.config.ts` と `.env` で扱い、`schema.prisma` の `datasource` には `url = env("DATABASE_URL")` を書かない方針にしています。`.env.local` はローカル上書き用に使えますが、基本セットアップは `.env.example` を `.env` にコピーする手順にしています。アプリ側では `src/lib/prisma.ts` で `@prisma/adapter-pg` を使って Prisma Client を生成しています。
 
@@ -172,9 +170,8 @@ AI 機能はまだ未実装です。将来的には、蓄積した Company / Tas
 2. 初期データ作成フロー、または demo-user データ移行方針の検討
 3. 認証済み CRUD を含むテスト拡充
 4. デプロイ準備
-5. Task の Company 紐づけ変更、Company 選択つき Task 作成の検討
-6. InterviewLog 一覧画面の検討
-7. 検索・フィルター・ソートの追加
-8. AI 機能の段階的な追加
+5. InterviewLog 一覧画面の検討
+6. 検索・フィルター・ソートの追加
+7. AI 機能の段階的な追加
 
 詳細な設計方針は [docs/00-project-overview.md](docs/00-project-overview.md)、現在の実装状況は [docs/02-mvp-implementation-status.md](docs/02-mvp-implementation-status.md)、認証後の確認項目は [docs/auth-verification.md](docs/auth-verification.md) にまとめています。

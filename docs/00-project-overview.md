@@ -39,6 +39,7 @@ v1.0 MVP では、応募管理の基本体験に絞ります。
 - 全体の進捗を確認するダッシュボード
 - Company 詳細画面内でのタスク管理
 - Task 一覧画面でのタスク管理
+- Task の Company 選択つき作成・紐づけ変更
 - PostgreSQL へのデータ保存
 - Prisma を使った基本的な CRUD
 - Auth.js session user ID に基づく owner scoping

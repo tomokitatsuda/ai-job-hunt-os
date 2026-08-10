@@ -2,7 +2,7 @@ import Link from "next/link";
 import { connection } from "next/server";
 
 import {
-  createGeneralTask,
+  createTaskFromTaskList,
   deleteTaskFromTaskList,
   toggleTaskCompletionFromTaskList,
 } from "./actions";
@@ -161,45 +161,59 @@ export default async function TasksPage() {
 
   const { prisma } = await import("@/lib/prisma");
   const currentUserId = await getCurrentUserId();
-  const tasks = await prisma.task.findMany({
-    where: {
-      userId: currentUserId,
-      OR: [
+  const [tasks, companies] = await Promise.all([
+    prisma.task.findMany({
+      where: {
+        userId: currentUserId,
+        OR: [
+          {
+            companyId: null,
+          },
+          {
+            company: {
+              userId: currentUserId,
+            },
+          },
+        ],
+      },
+      orderBy: [
         {
-          companyId: null,
-        },
-        {
-          company: {
-            userId: currentUserId,
+          dueDate: {
+            sort: "asc",
+            nulls: "last",
           },
         },
+        {
+          updatedAt: "desc",
+        },
       ],
-    },
-    orderBy: [
-      {
-        dueDate: {
-          sort: "asc",
-          nulls: "last",
+      select: {
+        id: true,
+        title: true,
+        memo: true,
+        dueDate: true,
+        isCompleted: true,
+        company: {
+          select: {
+            id: true,
+            name: true,
+          },
         },
       },
-      {
-        updatedAt: "desc",
+    }),
+    prisma.company.findMany({
+      where: {
+        userId: currentUserId,
       },
-    ],
-    select: {
-      id: true,
-      title: true,
-      memo: true,
-      dueDate: true,
-      isCompleted: true,
-      company: {
-        select: {
-          id: true,
-          name: true,
-        },
+      orderBy: {
+        name: "asc",
       },
-    },
-  });
+      select: {
+        id: true,
+        name: true,
+      },
+    }),
+  ]);
 
   const incompleteTasks = tasks.filter((task) => !task.isCompleted);
   const completedTasks = tasks.filter((task) => task.isCompleted);
@@ -245,16 +259,15 @@ export default async function TasksPage() {
           <div className="flex items-center justify-between gap-3">
             <div>
               <h2 className="text-base font-semibold text-slate-950">
-                一般タスクを追加
+                タスクを追加
               </h2>
               <p className="mt-2 text-sm leading-6 text-slate-600">
-                特定の企業に紐づかない就活タスクを追加します。
-                企業に紐づくタスクは各企業詳細ページから追加してください。
+                関連企業を選ぶと企業紐づきタスク、選ばない場合は一般タスクとして追加します。
               </p>
             </div>
           </div>
           <form
-            action={createGeneralTask}
+            action={createTaskFromTaskList}
             className="mt-4 rounded-md border border-slate-200 bg-slate-50 p-4"
           >
             <div className="grid gap-4 sm:grid-cols-2">
@@ -276,6 +289,23 @@ export default async function TasksPage() {
                   className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
                 />
               </label>
+              <label className="flex flex-col gap-2">
+                <span className="text-sm font-medium text-slate-700">
+                  関連企業
+                </span>
+                <select
+                  name="companyId"
+                  defaultValue=""
+                  className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+                >
+                  <option value="">関連企業なし（一般タスク）</option>
+                  {companies.map((company) => (
+                    <option key={company.id} value={company.id}>
+                      {company.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
               <label className="flex flex-col gap-2 sm:col-span-2">
                 <span className="text-sm font-medium text-slate-700">メモ</span>
                 <textarea
@@ -290,7 +320,7 @@ export default async function TasksPage() {
                 type="submit"
                 className="inline-flex items-center justify-center rounded-md bg-slate-950 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-slate-800"
               >
-                一般タスクを追加
+                タスクを追加
               </button>
             </div>
           </form>
@@ -300,7 +330,7 @@ export default async function TasksPage() {
           <TaskListSection
             title="未完了タスク"
             emptyTitle="未完了タスクはありません"
-            emptyDescription="一般タスクまたは企業詳細のタスクを追加すると、ここに表示されます。"
+            emptyDescription="上のフォームまたは企業詳細からタスクを追加すると、ここに表示されます。"
             tasks={incompleteTasks}
           />
           <TaskListSection

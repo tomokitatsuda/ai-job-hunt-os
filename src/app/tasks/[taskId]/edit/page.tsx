@@ -19,34 +19,48 @@ export default async function EditTaskPage({ params }: EditTaskPageProps) {
 
   const { prisma } = await import("@/lib/prisma");
   const currentUserId = await getCurrentUserId();
-  const task = await prisma.task.findFirst({
-    where: {
-      id: taskId,
-      userId: currentUserId,
-      OR: [
-        {
-          companyId: null,
-        },
-        {
-          company: {
-            userId: currentUserId,
+  const [task, companies] = await Promise.all([
+    prisma.task.findFirst({
+      where: {
+        id: taskId,
+        userId: currentUserId,
+        OR: [
+          {
+            companyId: null,
+          },
+          {
+            company: {
+              userId: currentUserId,
+            },
+          },
+        ],
+      },
+      select: {
+        id: true,
+        title: true,
+        dueDate: true,
+        memo: true,
+        company: {
+          select: {
+            id: true,
+            name: true,
           },
         },
-      ],
-    },
-    select: {
-      id: true,
-      title: true,
-      dueDate: true,
-      memo: true,
-      company: {
-        select: {
-          id: true,
-          name: true,
-        },
       },
-    },
-  });
+    }),
+    prisma.company.findMany({
+      where: {
+        userId: currentUserId,
+      },
+      orderBy: {
+        name: "asc",
+      },
+      select: {
+        id: true,
+        name: true,
+      },
+    }),
+  ]);
 
   if (!task) {
     notFound();
@@ -73,8 +87,8 @@ export default async function EditTaskPage({ params }: EditTaskPageProps) {
           </h1>
           <p className="mt-2 text-sm leading-6 text-slate-600">
             {task.company
-              ? `${task.company.name} に紐づくタスク内容を更新します。`
-              : "一般タスクの内容を更新します。"}
+              ? `${task.company.name} に紐づくタスク内容と関連企業を更新します。`
+              : "一般タスクの内容を更新し、必要に応じて企業へ紐づけます。"}
           </p>
         </header>
 
@@ -103,6 +117,24 @@ export default async function EditTaskPage({ params }: EditTaskPageProps) {
                 defaultValue={formatDateInputValue(task.dueDate)}
                 className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
               />
+            </label>
+
+            <label className="flex flex-col gap-2">
+              <span className="text-sm font-medium text-slate-700">
+                関連企業
+              </span>
+              <select
+                name="companyId"
+                defaultValue={task.company?.id ?? ""}
+                className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm shadow-sm outline-none focus:border-slate-500 focus:ring-2 focus:ring-slate-200"
+              >
+                <option value="">関連企業なし（一般タスク）</option>
+                {companies.map((company) => (
+                  <option key={company.id} value={company.id}>
+                    {company.name}
+                  </option>
+                ))}
+              </select>
             </label>
 
             <label className="flex flex-col gap-2 sm:col-span-2">

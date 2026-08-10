@@ -25,7 +25,7 @@ const parseTaskDueDate = (value: FormDataEntryValue | null) => {
   return Number.isNaN(date.getTime()) ? null : date;
 };
 
-export async function createGeneralTask(formData: FormData) {
+export async function createTaskFromTaskList(formData: FormData) {
   const title = toNullableString(formData.get("title"));
 
   if (!title) {
@@ -34,10 +34,27 @@ export async function createGeneralTask(formData: FormData) {
 
   const { prisma } = await import("@/lib/prisma");
   const currentUserId = await getCurrentUserId();
+  const requestedCompanyId = toNullableString(formData.get("companyId"));
+  const company = requestedCompanyId
+    ? await prisma.company.findFirst({
+        where: {
+          id: requestedCompanyId,
+          userId: currentUserId,
+        },
+        select: {
+          id: true,
+        },
+      })
+    : null;
+
+  if (requestedCompanyId && !company) {
+    notFound();
+  }
+
   await prisma.task.create({
     data: {
       userId: currentUserId,
-      companyId: null,
+      companyId: company?.id ?? null,
       title,
       dueDate: parseTaskDueDate(formData.get("dueDate")),
       memo: toNullableString(formData.get("memo")),
@@ -46,6 +63,12 @@ export async function createGeneralTask(formData: FormData) {
 
   revalidatePath("/tasks");
   revalidatePath("/");
+  revalidatePath("/companies");
+
+  if (company) {
+    revalidatePath(`/companies/${company.id}`);
+  }
+
   redirect("/tasks");
 }
 
@@ -129,6 +152,23 @@ export async function updateTaskFromTaskList(
 
   const { prisma } = await import("@/lib/prisma");
   const currentUserId = await getCurrentUserId();
+  const requestedCompanyId = toNullableString(formData.get("companyId"));
+  const company = requestedCompanyId
+    ? await prisma.company.findFirst({
+        where: {
+          id: requestedCompanyId,
+          userId: currentUserId,
+        },
+        select: {
+          id: true,
+        },
+      })
+    : null;
+
+  if (requestedCompanyId && !company) {
+    notFound();
+  }
+
   const task = await prisma.task.findFirst({
     where: {
       id: taskId,
@@ -171,6 +211,7 @@ export async function updateTaskFromTaskList(
     },
     data: {
       title,
+      companyId: company?.id ?? null,
       dueDate: parseTaskDueDate(formData.get("dueDate")),
       memo: toNullableString(formData.get("memo")),
     },
@@ -186,6 +227,10 @@ export async function updateTaskFromTaskList(
 
   if (task.companyId) {
     revalidatePath(`/companies/${task.companyId}`);
+  }
+
+  if (company && company.id !== task.companyId) {
+    revalidatePath(`/companies/${company.id}`);
   }
 
   redirect("/tasks");
