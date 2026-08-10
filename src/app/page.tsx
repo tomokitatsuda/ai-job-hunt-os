@@ -3,6 +3,7 @@ import { connection } from "next/server";
 
 import { ApplicationStatus } from "@/generated/prisma/client";
 import { SignOutButton } from "@/app/_components/auth-actions";
+import { OnboardingPanel } from "@/app/_components/onboarding-panel";
 import { getCurrentUserId } from "@/lib/current-user";
 
 const statusLabels: Record<ApplicationStatus, string> = {
@@ -54,6 +55,7 @@ export default async function Home() {
 
   const [
     totalCompanies,
+    totalTasks,
     statusCounts,
     incompleteTaskCount,
     upcomingTasks,
@@ -61,6 +63,11 @@ export default async function Home() {
     topPriorityCompanies,
   ] = await Promise.all([
     prisma.company.count({
+      where: {
+        userId: currentUserId,
+      },
+    }),
+    prisma.task.count({
       where: {
         userId: currentUserId,
       },
@@ -175,6 +182,7 @@ export default async function Home() {
   const statusCountMap = new Map(
     statusCounts.map((item) => [item.status, item._count.status]),
   );
+  const shouldShowOnboarding = totalCompanies === 0 && totalTasks === 0;
 
   return (
     <main className="min-h-screen bg-slate-50 px-4 py-8 text-slate-950 sm:px-6 lg:px-8">
@@ -219,6 +227,8 @@ export default async function Home() {
             </div>
           </div>
         </header>
+
+        {shouldShowOnboarding ? <OnboardingPanel /> : null}
 
         <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">

@@ -1,6 +1,6 @@
 # Auth Verification
 
-このドキュメントは、v0.4.0 相当の認証後手動確認のチェックリストです。
+このドキュメントは、認証後の手動確認と Playwright E2E の確認範囲を整理するチェックリストです。
 
 Auth.js / GitHub OAuth の導入後、通常動作では `getCurrentUserId()` が Auth.js の `auth()` から `session.user.id` を取得します。未ログイン時は主要画面から `/login` に redirect され、ログイン後に作成した Company / Task / InterviewLog はログインユーザーに紐づきます。
 
@@ -19,6 +19,9 @@ seed の `demo-user` は、過去データやローカル seed 確認用のユ�
 - Task 編集時に Company の紐づけ変更と解除ができる
 - ログイン後に Company 詳細画面内の InterviewLog を作成、表示、編集、削除できる
 - Dashboard の応募企業数、未完了 Task 数、直近予定、選考ステータス別件数などがログインユーザーのデータで集計される
+- Company と Task がない初回ユーザーにオンボーディングが表示される
+- スターターデータ作成でサンプル Company 1 件、Company 紐づき Task 1 件、一般 Task 1 件が作られる
+- データ作成後は初回オンボーディングが表示されなくなる
 - seed の `demo-user` データと GitHub OAuth でログインしたユーザーのデータが混ざらない
 
 ## demo-user の扱い
@@ -26,7 +29,20 @@ seed の `demo-user` は、過去データやローカル seed 確認用のユ�
 - `demo-user` は seed / 過去データ用として残す
 - `demo-user` のデータは、GitHub OAuth でログインした通常ユーザーへ自動移行しない
 - ログイン直後に seed データが見えない場合は、owner scoping が効いている正常な状態として扱う
-- demo-user データのログインユーザーへの移行方針や、初期データ作成フローは今後の検討事項とする
+- demo-user データのログインユーザーへの移行方針は今後の検討事項とする
+
+## 自動テストの範囲
+
+`npm run test:e2e` は Chromium で 9 本のテストを実行します。
+
+- 未ログイン時の `/`、`/companies`、`/companies/new`、`/tasks` の redirect と callback URL
+- `/login` の表示
+- 初回オンボーディングとスターターデータ作成
+- Company の作成・表示・編集・削除
+- Task の作成・Company 紐づけ変更・完了切り替え・削除
+- InterviewLog の作成・編集・削除
+
+認証済みテストでは、テストごとに一時 User と Auth.js Session を DB に作り、ブラウザに `authjs.session-token` Cookie を設定します。アプリ本体の Auth.js と owner scoping を通り、終了時にはそのユーザーに属するデータを削除します。GitHub OAuth プロバイダーとの実ログイン完走は自動テストの対象外です。
 
 ## 秘密情報チェック
 
@@ -37,7 +53,6 @@ seed の `demo-user` は、過去データやローカル seed 確認用のユ�
 
 ## まだ自動化していないこと
 
-- このチェックリストは手動確認ベースであり、本格的な自動テストはまだ整備していない
-- middleware/proxy による包括的な全画面保護はまだ実装していない
+- GitHub OAuth プロバイダーとの実ログイン完走は自動化していない
+- CI、WebKit / Safari 相当、複数ブラウザでの実行はまだ整備していない
 - demo-user データのログインユーザーへの自動移行はまだ実装していない
-- 初期データ作成フローはまだ実装していない

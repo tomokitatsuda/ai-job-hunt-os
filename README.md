@@ -11,7 +11,7 @@
 
 AI Job Hunt OS は、就職活動の応募状況、選考予定、タスク、面接ログを一元管理するための Web アプリです。
 
-現在は v0.6.0 相当として、認証ユーザー単位の owner scoping と Next.js 16 Proxy に加え、Task 一覧画面での Company 選択つき Task 作成と、Task 編集時の Company 紐づけ変更まで導入済みです。
+現在は v0.7.0 相当として、認証ユーザー単位の owner scoping と Next.js 16 Proxy に加え、初回ユーザー向けオンボーディングと認証済み CRUD の自動 E2E テストまで導入済みです。
 
 ## 概要
 
@@ -47,10 +47,15 @@ AI Job Hunt OS では、就活に必要な情報を Company を中心に整理�
 - Next.js 16 Proxy による Dashboard / Company / Task 画面の認証境界
 - `getCurrentUserId()` による Auth.js session user ID の取得
 - Company / Task / InterviewLog / Dashboard のログインユーザー単位の owner scoping
+- Company も Task もない初回ユーザー向けのオンボーディング表示
+- Company 1 件と Task 2 件を安全に作るスターターデータ作成 action
+- Playwright による未認証境界・認証済み CRUD・オンボーディングの E2E テスト
 
 Task は Company 詳細画面内で作成・編集・削除でき、Task 一覧画面ではログインユーザーの全 Task を未完了 / 完了に分けて確認し、完了状態を切り替えられます。また、Task 一覧画面の作成フォームでは Company を任意選択でき、未選択なら一般 Task、選択済みなら Company 紐づき Task として保存します。Task 編集画面では title、memo、dueDate に加えて Company の紐づけ先を変更でき、Company との紐づけ解除も可能です。
 
 `src/proxy.ts` は `/`、`/companies/:path*`、`/tasks/:path*` を保護し、未ログイン時は Auth.js の callback URL を付けて `/login` へ redirect します。Proxy は入口での早期チェックとして使い、データ取得・更新時には引き続き `getCurrentUserId()` で `session.user.id` を確認します。ログイン後に作成した Company / Task は、その認証ユーザーの `userId` に紐づきます。seed で作成される `demo-user` データは認証ユーザーとは別の過去データ用ユーザーであり、ログイン直後に既存 seed データが見えないのは正常です。
+
+Company と Task がどちらもない場合、Dashboard に初回セットアップを表示します。ユーザーは空のまま Company を登録するか、サンプル Company 1 件、Company に紐づく Task 1 件、一般 Task 1 件を作成して、編集・削除しながら操作を学べます。既存データがあるユーザーには追加せず、所有者も現在の認証ユーザーに限定します。
 
 ## 認証後の確認
 
@@ -64,7 +69,7 @@ v0.4.0 相当では、未ログイン時の `/login` redirect、GitHub OAuth で
 
 ![Dashboard screenshot](docs/assets/screenshots/dashboard.png)
 
-DB に保存されたログインユーザーの応募状況を集計して、応募企業数、未完了 Task 数、直近の Task 締切、直近の面接日などを確認できる画面です。選考ステータス別件数や直近の Task / InterviewLog も、この画面から把握できます。
+DB に保存されたログインユーザーの応募状況を集計して、応募企業数、未完了 Task 数、直近の Task 締切、直近の面接日などを確認できる画面です。選考ステータス別件数や直近の Task / InterviewLog も、この画面から把握できます。Company と Task がない初回ユーザーには、登録導線とスターターデータ作成を含むオンボーディングを表示します。
 Dashboard には「企業を見る」「タスクを見る」「企業を追加」「タスクを追加」の導線を置いています。
 
 ### Company 一覧
@@ -88,14 +93,13 @@ Company の基本情報と、その Company に紐づく Task / InterviewLog を
 ## 現在未実装の機能
 
 - demo-user データのログインユーザーへの自動移行
-- 初期データ作成フロー
 - AI 機能
 - InterviewLog 一覧画面
 - 検索・フィルター・ソート
 - デプロイ
-- 本格的なテスト整備
+- CI 連携、複数ブラウザなどのテスト拡充
 
-Auth.js / GitHub OAuth の基盤、`/login`、サインイン / サインアウト action、アプリ画面を対象にした Proxy は導入済みです。初期データ作成フローはまだ実装していません。
+Auth.js / GitHub OAuth の基盤、`/login`、サインイン / サインアウト action、アプリ画面を対象にした Proxy、初回ユーザー向けスターターデータ作成フローは導入済みです。
 
 ## 設計上の工夫
 
@@ -146,15 +150,24 @@ npm run dev
 
 開発サーバー起動後、ブラウザで `http://localhost:3000` を開きます。未ログインの場合は `/login` に redirect され、GitHub OAuth でログイン後に Dashboard を確認できます。
 
-## E2E smoke test
+## E2E test
 
-v0.5.0 相当では、Playwright による最低限の E2E smoke test を追加しています。対象ブラウザは Chromium のみで、`npm run test:e2e` は `webServer` 設定により `npm run dev` を起動し、`http://localhost:3000` に対して `/login` 表示と未ログイン時の `/`、`/companies`、`/companies/new`、`/tasks` から callback URL 付き `/login` への redirect を確認します。
+Playwright で Chromium を対象に 9 本の E2E テストを実行します。5 本は `/login` と未ログイン時の認証境界、4 本は初回オンボーディング、Company CRUD、Task CRUD と Company 紐づけ変更、InterviewLog CRUD を確認します。認証済みテストは一時的な User と Auth.js Session を DB に作成し、ブラウザへセッション Cookie を設定するため、アプリ側にテスト専用の認証回避を入れていません。各テストのデータは終了時に削除します。
 
 ```bash
+docker compose up -d
+npx prisma migrate dev
 npm run test:e2e
 ```
 
-GitHub OAuth の実ログイン完走、ログイン済み CRUD、DB reset / seed、CI 連携、WebKit / Safari 相当の自動テストはまだ含めていません。
+認証境界と認証済み CRUD は個別にも実行できます。
+
+```bash
+npm run test:e2e:auth-boundary
+npm run test:e2e:authenticated
+```
+
+GitHub OAuth の実ログイン完走、CI 連携、WebKit / Safari 相当の自動テストはまだ含めていません。E2E は `DATABASE_URL` の User / Session / Company / Task / InterviewLog を操作するため、ローカルの開発・テスト用 DB で実行してください。
 
 詳しい手順や確認コマンドは [docs/setup.md](docs/setup.md) を参照してください。`.env.example` の `DATABASE_URL` はローカル開発用 Docker 環境のサンプルです。`AUTH_SECRET`、`AUTH_GITHUB_ID`、`AUTH_GITHUB_SECRET` はプレースホルダーのみを置いています。実際の `.env` / `.env.local`、本番 DB や個人用 DB の接続情報、OAuth secret、API キー、個人情報は commit しないでください。
 
@@ -167,8 +180,8 @@ AI 機能はまだ未実装です。将来的には、蓄積した Company / Tas
 ## 今後の予定
 
 1. README / docs の継続整備
-2. 初期データ作成フロー、または demo-user データ移行方針の検討
-3. 認証済み CRUD を含むテスト拡充
+2. CI 連携と複数ブラウザを含むテスト拡充
+3. demo-user データ移行方針の検討
 4. デプロイ準備
 5. InterviewLog 一覧画面の検討
 6. 検索・フィルター・ソートの追加

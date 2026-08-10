@@ -110,7 +110,26 @@ npm run dev
 http://localhost:3000
 ```
 
-未ログインの場合は `/login` に redirect されます。GitHub OAuth でログイン後、Dashboard が表示され、ログインユーザーの応募状況、タスク、面接ログが確認できればセットアップ完了です。初回ログイン直後に seed データが見えない場合は、ログインユーザー用の Company / Task / InterviewLog を作成して動作確認してください。
+未ログインの場合は `/login` に redirect されます。GitHub OAuth でログイン後、Dashboard が表示され、ログインユーザーの応募状況、タスク、面接ログが確認できればセットアップ完了です。初回ログイン直後に seed データが見えない場合は、Dashboard のオンボーディングから最初の Company を登録するか、スターターデータを作成して操作を確認できます。
+
+## 9. E2E テストを実行する
+
+E2E テストは `DATABASE_URL` の PostgreSQL に一時 User / Session と CRUD 対象データを作成します。Docker の DB を起動し、migration を適用してから実行してください。終了時にテストユーザーと関連データを削除しますが、本番 DB ではなくローカルの開発・テスト用 DB を使用してください。
+
+```bash
+docker compose up -d
+npx prisma migrate dev
+npm run test:e2e
+```
+
+Chromium で、未認証の画面保護 5 本と、初回オンボーディング・Company・Task・InterviewLog の認証済み操作 4 本を確認します。Playwright の `webServer` が開発サーバーを自動起動するため、別ターミナルで `npm run dev` を起動する必要はありません。
+
+対象を分けて実行する場合は、次のコマンドを使います。
+
+```bash
+npm run test:e2e:auth-boundary
+npm run test:e2e:authenticated
+```
 
 ## よくある確認コマンド
 
@@ -144,11 +163,18 @@ Lint を実行します。
 npm run lint
 ```
 
+E2E テストを実行します。
+
+```bash
+npm run test:e2e
+```
+
 公開前の最小確認として、以下を実行します。
 
 ```bash
 npm run lint
 npx prisma validate
+npm run test:e2e
 npm run build
 ```
 
@@ -157,6 +183,8 @@ npm run build
 - Auth.js / GitHub OAuth の認証基盤は導入済みです。
 - 通常動作では Auth.js の `session.user.id` ベースで DB を読み書きします。
 - `demo-user` は seed / 過去データ用として残していますが、ログインユーザーへ自動移行はしません。
+- 初回ユーザーは Dashboard から、明示操作でスターターデータを作成できます。
+- E2E テストは `DATABASE_URL` の DB を操作するため、本番 DB に向けて実行しないでください。
 - AI 機能はまだ未実装です。
 - デプロイ手順はまだ整備していません。
 - `.env`、`.env.local`、本番 DB や個人用 DB の `DATABASE_URL`、OAuth secret、API キー、個人情報は commit しないでください。

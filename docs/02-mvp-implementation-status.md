@@ -2,17 +2,17 @@
 
 ## このドキュメントの目的
 
-このドキュメントは、AI Job Hunt OS のモック MVP から DB 操作、Auth.js 基盤導入、v0.6.0 相当の Task と Company の紐づけ操作まで、現在どこまで実装されているかを整理するためのメモです。
+このドキュメントは、AI Job Hunt OS のモック MVP から DB 操作、Auth.js 基盤導入、v0.7.0 相当の初回オンボーディングと認証済み E2E テストまで、現在どこまで実装されているかを整理するためのメモです。
 
 最初はモックデータを使って、企業一覧、企業詳細、企業に紐づくタスク、面接ログを画面で確認できる状態にしました。その後、Prisma 7 + PostgreSQL + Docker Compose を導入し、現在は Auth.js / GitHub OAuth の認証基盤を入れ、Company を中心に Task と InterviewLog を紐づけてログインユーザー単位で DB 操作できる状態まで進んでいます。
 
-Company は一覧、詳細、作成、編集、削除まで実装済みです。Task は企業詳細画面内で表示・作成・更新・削除でき、Task 一覧画面でもログインユーザーの全 Task を未完了 / 完了に分けて確認できます。また、Task 一覧画面から Company を任意選択して Task を作成し、編集時に Company の紐づけ変更・解除もできます。InterviewLog は、まず企業詳細画面内で表示・作成・更新・削除できる最小構成にしています。Dashboard では DB 由来の集計を表示できる状態になっています。
+Company は一覧、詳細、作成、編集、削除まで実装済みです。Task は企業詳細画面内で表示・作成・更新・削除でき、Task 一覧画面でもログインユーザーの全 Task を未完了 / 完了に分けて確認できます。また、Task 一覧画面から Company を任意選択して Task を作成し、編集時に Company の紐づけ変更・解除もできます。InterviewLog は、まず企業詳細画面内で表示・作成・更新・削除できる最小構成にしています。Dashboard では DB 由来の集計に加え、データがないユーザーへ初回セットアップを案内します。
 
 Auth.js / GitHub OAuth 基盤、`/login`、サインイン / サインアウト action、Auth.js session user ID に基づく owner scoping は導入済みです。`src/proxy.ts` で Dashboard / Company / Task 画面を保護し、`src/lib/current-user.ts` の `getCurrentUserId()` でもデータ取得・更新時に `session.user.id` を確認します。Company / Task / InterviewLog / Dashboard はログインユーザーごとにデータが分離されます。
 
-v0.4.0 相当では、未ログイン時の `/login` redirect、ログイン / ログアウト、Company CRUD、Task CRUD、InterviewLog CRUD、Dashboard 集計、`demo-user` とログインユーザーのデータが混ざらないことを手動確認済みです。詳細は `docs/auth-verification.md` にまとめています。
+未ログイン時の `/login` redirect、ログイン / ログアウト、Company CRUD、Task CRUD、InterviewLog CRUD、Dashboard 集計、`demo-user` とログインユーザーのデータが混ざらないことを手動確認済みです。さらに認証境界、初回オンボーディング、主要 CRUD は Playwright で自動確認します。詳細は `docs/auth-verification.md` にまとめています。
 
-ただし、demo-user データのログインユーザーへの自動移行、初期データ作成フロー、AI 機能、検索・フィルター・ソート、InterviewLog 一覧画面はまだ実装していません。seed による `demo-user` データは認証ユーザーとは別であり、ログイン直後に既存 seed データが見えないのは正常です。
+ただし、demo-user データのログインユーザーへの自動移行、AI 機能、検索・フィルター・ソート、InterviewLog 一覧画面はまだ実装していません。seed による `demo-user` データは認証ユーザーとは別であり、ログイン直後に既存 seed データが見えないのは正常です。
 
 就活 GitHub として読まれたときに、現在の実装範囲、まだ実装していない範囲、次に進む候補が伝わることを目的にしています。
 
@@ -22,7 +22,7 @@ v0.4.0 相当では、未ログイン時の `/login` redirect、ログイン / �
 
 Dashboard 画面です。
 
-DB からログインユーザーの Company / Task / InterviewLog を読み込み、応募企業数、未完了 Task 数、直近の Task 締切、直近の面接日、選考ステータス別件数、志望度の高い Company、直近の Task / InterviewLog を表示しています。
+DB からログインユーザーの Company / Task / InterviewLog を読み込み、応募企業数、未完了 Task 数、直近の Task 締切、直近の面接日、選考ステータス別件数、志望度の高い Company、直近の Task / InterviewLog を表示しています。Company と Task がない場合はオンボーディングを表示し、最初の Company 登録か、サンプル Company 1 件と Task 2 件の作成を選べます。
 
 「企業を見る」「タスクを見る」「企業を追加」「タスクを追加」の導線も置いています。
 
@@ -125,7 +125,7 @@ seed による `demo-user` は、過去データやローカル確認用のユ�
 - `@prisma/adapter-pg`
 - ESLint
 
-AI API、デプロイ環境、本格的なテスト基盤はまだ導入していません。
+AI API とデプロイ環境はまだ導入していません。テストは Playwright + Chromium で認証境界と認証済み主要 CRUD をカバーし、今後 CI と複数ブラウザへ広げます。
 
 ## 4. 初期モックデータ構成
 
@@ -188,7 +188,7 @@ AI API、デプロイ環境、本格的なテスト基盤はまだ導入して�
 
 ## 5. 現在できること
 
-現在の DB 操作、Auth.js 基盤導入、認証後手動確認済みの段階では、以下のことができます。
+現在の DB 操作、Auth.js 基盤導入、認証後手動確認と E2E 自動化の段階では、以下のことができます。
 
 - Dashboard で DB 由来の集計を表示できる
 - 応募企業数、未完了 Task 数、直近の Task 締切、直近の面接日を確認できる
@@ -196,6 +196,8 @@ AI API、デプロイ環境、本格的なテスト基盤はまだ導入して�
 - 志望度の高い Company を確認できる
 - 直近の Task / InterviewLog を確認できる
 - Dashboard から Task 一覧画面へ移動できる
+- データがない初回ユーザーへオンボーディングを表示できる
+- 現在の認証ユーザーにだけスターターデータを作成できる
 - 企業一覧を DB から表示できる
 - 企業詳細を DB から表示できる
 - 企業を作成できる
@@ -223,6 +225,7 @@ AI API、デプロイ環境、本格的なテスト基盤はまだ導入して�
 - 企業詳細画面内で、InterviewLog を編集・削除できる
 - 企業一覧から企業詳細へ移動できる
 - 存在しない企業 ID にアクセスした場合は 404 になる
+- Playwright で未認証の redirect、初回オンボーディング、Company / Task / InterviewLog CRUD を自動確認できる
 
 Task は Company 詳細画面内で表示・作成・更新・削除でき、Task 一覧画面ではログインユーザーの全 Task の確認、完了状態の切り替え、Company 選択つき作成、紐づけ変更、編集・削除ができます。InterviewLog は、まず企業詳細画面内で表示・作成・更新・削除できる最小構成にしています。
 
@@ -231,12 +234,11 @@ Task は Company 詳細画面内で表示・作成・更新・削除でき、Tas
 以下はまだ実装していません。
 
 - demo-user データのログインユーザーへの自動移行
-- 初期データ作成フロー
 - AI 機能
 - 検索・フィルター・ソート
 - InterviewLog 一覧画面
 - デプロイ
-- テスト本格整備
+- CI 連携、WebKit などの複数ブラウザテスト
 
 この段階では、完成済みのアプリとしてではなく、モック MVP から DB 操作、Auth.js 基盤導入へ段階的に進めている途中として扱います。
 
@@ -252,7 +254,7 @@ AI Job Hunt OS では、Company を中心に Task と InterviewLog を紐づけ�
 
 Task と InterviewLog は、まず企業詳細画面内で表示・作成・更新・削除できる最小構成にしました。Company に紐づけて作成し、Task は完了/未完了の切り替えも確認できるようにしています。さらに Task 一覧画面では、ログインユーザーの全 Task を未完了 / 完了に分けて確認し、関連 Company へ移動できるようにしています。作成・編集時には Company を任意選択でき、一般 Task への紐づけ解除も可能です。検索・フィルター・ソート、InterviewLog 一覧画面はまだ未実装です。
 
-Auth.js / GitHub OAuth の基盤を導入し、`getCurrentUserId()` は Auth.js session user ID を返す形に切り替えました。これにより、Company / Task / InterviewLog / Dashboard はログインユーザーごとのデータ取得になっています。さらに、Next.js 16 Proxy でアプリ画面への未ログインアクセスを早期に redirect します。初期データ作成フローと demo-user データの自動移行はまだ未実装です。
+Auth.js / GitHub OAuth の基盤を導入し、`getCurrentUserId()` は Auth.js session user ID を返す形に切り替えました。これにより、Company / Task / InterviewLog / Dashboard はログインユーザーごとのデータ取得になっています。さらに、Next.js 16 Proxy でアプリ画面への未ログインアクセスを早期に redirect します。初回データは明示的な Server Action で作り、既存データがある場合は追加しません。demo-user データの自動移行はまだ未実装です。
 
 ### Company 削除について
 
@@ -272,8 +274,8 @@ Task 一覧画面から作成する一般 Task は `companyId: null`、Company �
 次に進む候補は以下です。
 
 - README / docs の継続整備
-- 初期データ作成フロー、または demo-user データ移行方針の検討
-- 認証済み CRUD を含むテスト拡充
+- CI 連携と複数ブラウザを含むテスト拡充
+- demo-user データ移行方針の検討
 - デプロイ準備
 - InterviewLog 一覧画面の検討
 - 検索・フィルター・ソート
@@ -289,6 +291,8 @@ Task 一覧画面から作成する一般 Task は `companyId: null`、Company �
 - Company は CRUD まで進め、Task と InterviewLog は企業詳細画面内で表示・作成・更新・削除できる最小構成にした
 - Task 一覧画面で全 Task を確認し、Company 選択つき作成、紐づけ変更、完了状態の切り替え、編集・削除ができるようにした
 - Dashboard では DB 集計により、応募状況、未完了タスク、直近予定を一画面で確認できるようにした
+- 初回ユーザーには選べるオンボーディングを出し、明示操作なしにデータを混ぜない設計にした
+- 一時 User / Session を作る Playwright fixture により、認証回避を実装せず主要 CRUD を自動確認した
 - demo user 固定で DB 操作を先に検証した後、Auth.js session user ID ベースの owner scoping に切り替えた
 - seed の demo-user データは認証ユーザーとは別であり、ログイン直後に見えないのは正常な状態として整理した
 - seed により、ローカル開発環境で再現できるサンプルデータを用意した
