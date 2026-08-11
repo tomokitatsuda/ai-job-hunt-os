@@ -1,5 +1,7 @@
 import { randomUUID } from "node:crypto";
 
+import type { Page } from "@playwright/test";
+
 import {
   createTestCompany,
   createTestInterviewLog,
@@ -10,6 +12,26 @@ import {
   findTestTask,
 } from "./database";
 import { expect, test } from "./fixtures";
+
+async function waitForEditFormHydration(page: Page) {
+  const submitButton = page.getByRole("button", { name: "変更を保存" });
+
+  await expect
+    .poll(
+      () =>
+        submitButton.evaluate((element) =>
+          Object.keys(element).some(
+            (key) =>
+              key.startsWith("__reactProps$") ||
+              key.startsWith("__reactFiber$"),
+          ),
+        ),
+      {
+        message: "Wait for React to hydrate the edit form",
+      },
+    )
+    .toBe(true);
+}
 
 test.describe("authenticated onboarding and CRUD", () => {
   test("does not expose another user's application data", async ({
@@ -130,6 +152,7 @@ test.describe("authenticated onboarding and CRUD", () => {
     ).toBeVisible();
 
     await page.getByRole("link", { name: "編集", exact: true }).click();
+    await waitForEditFormHydration(page);
     await page.getByLabel("企業名").fill(updatedCompanyName);
     await page.getByLabel("選考ステータス").selectOption("FIRST_INTERVIEW");
     await page.getByRole("button", { name: "変更を保存" }).click();
@@ -166,7 +189,7 @@ test.describe("authenticated onboarding and CRUD", () => {
     const taskCard = page.locator("article").filter({ hasText: taskTitle });
     await expect(taskCard).toContainText(firstCompany.name);
     await taskCard.getByRole("link", { name: "編集" }).click();
-    await page.waitForLoadState("networkidle");
+    await waitForEditFormHydration(page);
 
     await page.getByLabel("タスク名").fill(updatedTaskTitle);
     await page.getByLabel("関連企業").selectOption(secondCompany.id);
@@ -227,7 +250,7 @@ test.describe("authenticated onboarding and CRUD", () => {
       .filter({ hasText: question });
     await expect(interviewCard).toContainText("一次面接");
     await interviewCard.getByRole("link", { name: "編集" }).click();
-    await page.waitForLoadState("networkidle");
+    await waitForEditFormHydration(page);
 
     await page.getByLabel("質問された内容").fill(updatedQuestion);
     await page.getByLabel("面接種別").fill("二次面接");
