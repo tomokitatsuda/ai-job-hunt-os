@@ -37,6 +37,7 @@ jobs:
 
     env:
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/ai_job_hunt_os_ci?schema=public
+      CONTAINER_DATABASE_URL: postgresql://postgres:postgres@host.docker.internal:5432/ai_job_hunt_os_ci?schema=public
       AUTH_SECRET: ci-only-auth-secret-not-used-outside-github-actions
       AUTH_TRUST_HOST: "true"
       AUTH_GITHUB_ID: ci-placeholder-client-id
@@ -55,6 +56,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Audit dependencies
+        run: npm audit --audit-level=high
+
       - name: Apply database migrations
         run: npx prisma migrate deploy
 
@@ -69,6 +73,54 @@ jobs:
 
       - name: Build
         run: npm run build
+
+      - name: Build deployment images
+        run: |
+          docker build --target migration --tag ai-job-hunt-os-migration:ci .
+          docker build --target runner --tag ai-job-hunt-os:ci .
+
+      - name: Verify migration image
+        run: >-
+          docker run --rm
+          --add-host host.docker.internal:host-gateway
+          --env DATABASE_URL="${CONTAINER_DATABASE_URL}"
+          ai-job-hunt-os-migration:ci
+
+      - name: Start production image
+        run: >-
+          docker run --detach
+          --name ai-job-hunt-os-smoke
+          --add-host host.docker.internal:host-gateway
+          --publish 3100:3000
+          --env DATABASE_URL="${CONTAINER_DATABASE_URL}"
+          --env AUTH_SECRET
+          --env AUTH_TRUST_HOST
+          --env AUTH_GITHUB_ID
+          --env AUTH_GITHUB_SECRET
+          ai-job-hunt-os:ci
+
+      - name: Smoke test production image
+        run: |
+          test "$(docker image inspect ai-job-hunt-os:ci --format '{{.Config.User}}')" = "node"
+          docker run --rm --entrypoint sh ai-job-hunt-os:ci -c 'test ! -e /app/.env'
+          for attempt in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:3100/api/health/ready; then
+              break
+            fi
+            if [[ "${attempt}" == "30" ]]; then
+              docker logs ai-job-hunt-os-smoke
+              exit 1
+            fi
+            sleep 1
+          done
+          curl --fail --silent http://127.0.0.1:3100/api/health/live
+
+      - name: Stop production image
+        if: ${{ always() }}
+        run: |
+          if docker inspect ai-job-hunt-os-smoke >/dev/null 2>&1; then
+            docker rm --force ai-job-hunt-os-smoke
+          fi
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium webkit

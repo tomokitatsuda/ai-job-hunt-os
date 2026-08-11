@@ -59,7 +59,7 @@ MVP の目的は、就活情報を一覧し、次に何をすべきか判断で�
 - AI による面接対策
 - InterviewLog 一覧画面
 - 検索・フィルター・ソート
-- デプロイ
+- hosting providerの選定と実環境へのデプロイ
 - GitHub OAuth の実ログインを含む外部サービス連携テスト
 
 Auth.js / GitHub OAuth 基盤、`/login`、サインイン / サインアウト action、Dashboard / Company / Task 画面の Proxy 保護は導入済みです。

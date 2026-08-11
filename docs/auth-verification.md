@@ -35,7 +35,7 @@ seed の `demo-user` は、ローカル開発fixtureとして残します。GitH
 
 ## 自動テストの範囲
 
-`npm run test:e2e` は Chromium と WebKit で各10本、合計20本のテストを実行します。
+`npm run test:e2e` は Chromium と WebKit で各12本、合計24本のテストを実行します。
 
 - 未ログイン時の `/`、`/companies`、`/companies/new`、`/tasks` の redirect と callback URL
 - `/login` の表示
@@ -44,10 +44,11 @@ seed の `demo-user` は、ローカル開発fixtureとして残します。GitH
 - Task の作成・Company 紐づけ変更・完了切り替え・削除
 - InterviewLog の作成・編集・削除
 - 別ユーザーのCompany / Task / InterviewLogに対するowner isolation
+- livenessとPostgreSQL readiness endpoint
 
 認証済みテストでは、テストごとに一時 User と Auth.js Session を DB に作り、ブラウザに `authjs.session-token` Cookie を設定します。アプリ本体の Auth.js と owner scoping を通り、終了時にはそのユーザーに属するデータを削除します。GitHub OAuth プロバイダーとの実ログイン完走は自動テストの対象外です。
 
-GitHub Actions では専用のPostgreSQL service containerにmigrationを適用し、lint、Prisma schema validation、DB安全判定unit test、production buildに続けて同じ20本を1 workerで実行します。ローカルの `npm run test:e2e` は通常の並列実行です。
+GitHub Actions ではdependency auditを行い、専用のPostgreSQL service containerにmigrationを適用し、lint、Prisma schema validation、DB安全判定unit test、production build、container smoke testに続けて同じ24本を1 workerで実行します。ローカルの `npm run test:e2e` は通常の並列実行です。
 
 ## 秘密情報チェック
 

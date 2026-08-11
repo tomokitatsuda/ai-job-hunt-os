@@ -2,7 +2,7 @@
 
 ## このドキュメントの目的
 
-このドキュメントは、AI Job Hunt OS のモック MVP から DB 操作、Auth.js 基盤導入、v0.9.0 相当の初回オンボーディング、owner isolation E2E、GitHub Actions CI、demo data方針まで、現在どこまで実装されているかを整理するためのメモです。
+このドキュメントは、AI Job Hunt OS のモック MVP から DB 操作、Auth.js 基盤導入、v0.10.0 相当の初回オンボーディング、owner isolation E2E、GitHub Actions CI、demo data方針、production containerまで、現在どこまで実装されているかを整理するためのメモです。
 
 最初はモックデータを使って、企業一覧、企業詳細、企業に紐づくタスク、面接ログを画面で確認できる状態にしました。その後、Prisma 7 + PostgreSQL + Docker Compose を導入し、現在は Auth.js / GitHub OAuth の認証基盤を入れ、Company を中心に Task と InterviewLog を紐づけてログインユーザー単位で DB 操作できる状態まで進んでいます。
 
@@ -122,12 +122,13 @@ seed による `demo-user` は、ローカル確認用の開発fixtureとして�
 - Prisma 7
 - PostgreSQL
 - Docker Compose
+- Docker multi-stage build / Next.js standalone output
 - `@prisma/adapter-pg`
 - Playwright
 - GitHub Actions
 - ESLint
 
-AI API とデプロイ環境はまだ導入していません。テストは Playwright + Chromium / WebKit で認証境界と認証済み主要 CRUD をカバーし、GitHub Actions でも PostgreSQL migration、lint、schema検証、buildと合わせて実行します。
+AI API と実デプロイ環境はまだ導入していません。provider共通のproduction container、migration image、health checkは準備済みです。テストは Playwright + Chromium / WebKit で認証境界、認証済み主要 CRUD、health checkをカバーし、GitHub Actionsでもdependency audit、PostgreSQL migration、lint、schema検証、build、container smoke testと合わせて実行します。
 
 ## 4. 初期モックデータ構成
 
@@ -228,9 +229,12 @@ AI API とデプロイ環境はまだ導入していません。テストは Pla
 - 企業一覧から企業詳細へ移動できる
 - 存在しない企業 ID にアクセスした場合は 404 になる
 - Playwright で未認証の redirect、初回オンボーディング、Company / Task / InterviewLog CRUD を自動確認できる
-- GitHub Actions で PostgreSQL を起動し、unit testとChromium / WebKitの合計20件を継続的に確認できる
+- GitHub Actions で PostgreSQL を起動し、unit testとChromium / WebKitの合計24件を継続的に確認できる
 - 別ユーザーのCompany / Task / InterviewLogが表示されず、詳細・編集の直URLも404になることを確認できる
 - seedと認証済みE2Eのremote DB誤実行をデフォルトで拒否できる
+- standalone production imageをnon-root userで実行できる
+- release前にmigration imageを実行し、applicationとmigrationの責務を分離できる
+- livenessとDB readinessをcontainerおよびCIから確認できる
 
 Task は Company 詳細画面内で表示・作成・更新・削除でき、Task 一覧画面ではログインユーザーの全 Task の確認、完了状態の切り替え、Company 選択つき作成、紐づけ変更、編集・削除ができます。InterviewLog は、まず企業詳細画面内で表示・作成・更新・削除できる最小構成にしています。
 
@@ -241,7 +245,7 @@ Task は Company 詳細画面内で表示・作成・更新・削除でき、Tas
 - AI 機能
 - 検索・フィルター・ソート
 - InterviewLog 一覧画面
-- デプロイ
+- hosting providerの選定と実環境へのデプロイ
 - GitHub OAuth の実ログインを含む外部サービス連携テスト
 
 この段階では、完成済みのアプリとしてではなく、モック MVP から DB 操作、Auth.js 基盤導入へ段階的に進めている途中として扱います。
@@ -277,8 +281,8 @@ Task 一覧画面から作成する一般 Task は `companyId: null`、Company �
 
 次に進む候補は以下です。
 
-- README / docs の継続整備
-- デプロイ準備
+- hosting providerを選びstagingへデプロイ
+- production OAuth／domain／monitoringの設定
 - InterviewLog 一覧画面の検討
 - 検索・フィルター・ソート
 - AI 機能
@@ -296,6 +300,8 @@ Task 一覧画面から作成する一般 Task は `companyId: null`、Company �
 - 初回ユーザーには選べるオンボーディングを出し、明示操作なしにデータを混ぜない設計にした
 - 一時 User / Session を作る Playwright fixture により、認証回避を実装せず主要 CRUD を自動確認した
 - Chromium / WebKit の両方を PostgreSQL service container つき GitHub Actions で実行できるようにした
+- Next.js standalone outputとmulti-stage buildで約98 MBのnon-root production imageを作った
+- migrationをapplication起動から分離し、health endpointと実container smoke testをCIへ追加した
 - demo-userを開発fixtureに限定し、remote seed防止とowner isolationテストで境界を保証した
 - demo user 固定で DB 操作を先に検証した後、Auth.js session user ID ベースの owner scoping に切り替えた
 - seed の demo-user データは認証ユーザーとは別であり、ログイン直後に見えないのは正常な状態として整理した

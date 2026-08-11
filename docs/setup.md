@@ -145,14 +145,27 @@ npm run test:e2e:webkit
 `.github/workflows/ci.yml` は `main` への push、`main` 向け pull request、手動実行で起動します。GitHub Actions内に使い捨てのPostgreSQL 17を用意し、次を順番に実行します。
 
 1. `npm ci`
-2. `npx prisma migrate deploy`
-3. `npm run lint`
-4. `npx prisma validate`
-5. `npm run test:unit`
-6. `npm run build`
-7. Chromium / WebKit のインストールと `npm run test:e2e`
+2. `npm audit --audit-level=high`
+3. `npx prisma migrate deploy`
+4. `npm run lint`
+5. `npx prisma validate`
+6. `npm run test:unit`
+7. `npm run build`
+8. production用migration／runner imageのbuildとcontainer smoke test
+9. Chromium / WebKit のインストールと `npm run test:e2e`
 
-CIでは先にbuildしたアプリを `npm run start` で起動してE2Eを実行します。localhostのproduction serverをAuth.jsに許可する `AUTH_TRUST_HOST=true` もCI内だけで設定します。Playwright HTML reportはGitHub Actionsのartifactとして14日間保存されます。CI用のDB・Auth.js・GitHub OAuth値はworkflow内の使い捨て／placeholderであり、実際のOAuth secretは使用しません。
+CIでは先にbuildしたstandalone applicationを `npm run start:standalone` で起動してE2Eを実行します。container smoke testではmigration image、non-root user、`.env`非混入、liveness、DB readinessを確認します。localhostのproduction serverをAuth.jsに許可する `AUTH_TRUST_HOST=true` もCI内だけで設定します。Playwright HTML reportはGitHub Actionsのartifactとして14日間保存されます。CI用のDB・Auth.js・GitHub OAuth値はworkflow内の使い捨て／placeholderであり、実際のOAuth secretは使用しません。
+
+## Production container
+
+Next.js standalone outputを使うproduction imageと、Prisma migration専用imageをbuildできます。
+
+```bash
+docker build --target migration --tag ai-job-hunt-os-migration:local .
+docker build --target runner --tag ai-job-hunt-os:local .
+```
+
+本番環境変数、GitHub OAuth callback、release順序、health check、rollbackの詳細は [deployment guide](deployment.md) を参照してください。
 
 ## よくある確認コマンド
 
@@ -216,6 +229,6 @@ npm run build
 - 初回ユーザーは Dashboard から、明示操作でスターターデータを作成できます。
 - E2E テストは `DATABASE_URL` の DB を操作するため、本番 DB に向けて実行しないでください。
 - AI 機能はまだ未実装です。
-- デプロイ手順はまだ整備していません。
+- provider共通のcontainer配備手順は整備済みですが、hosting provider選定と実環境への公開はまだです。
 - `.env`、`.env.local`、本番 DB や個人用 DB の `DATABASE_URL`、OAuth secret、API キー、個人情報は commit しないでください。
 - `.env.example` は既に存在します。現時点では新規作成は不要です。
