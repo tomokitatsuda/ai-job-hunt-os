@@ -1,0 +1,24 @@
+# yaml-language-server: $schema=https://render.com/schema/render.yaml.json
+
+services:
+  - type: web
+    name: ai-job-hunt-os-staging-tomokitatsuda
+    runtime: image
+    image:
+      url: ghcr.io/tomokitatsuda/ai-job-hunt-os:staging
+    plan: free
+    region: singapore
+    numInstances: 1
+    healthCheckPath: /api/health/ready
+    maxShutdownDelaySeconds: 30
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: AUTH_SECRET
+        generateValue: true
+      - key: AUTH_GITHUB_ID
+        sync: false
+      - key: AUTH_GITHUB_SECRET
+        sync: false
+      - key: AUTH_TRUST_HOST
+        value: "true"

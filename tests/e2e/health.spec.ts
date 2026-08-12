@@ -8,7 +8,10 @@ test.describe("health checks", () => {
 
     expect(response.status()).toBe(200);
     expect(response.headers()["cache-control"]).toContain("no-store");
-    expect(await response.json()).toEqual({ status: "ok" });
+    expect(await response.json()).toEqual({
+      status: "ok",
+      revision: process.env.APP_REVISION ?? "unknown",
+    });
   });
 
   test("readiness reports that PostgreSQL is reachable", async ({ request }) => {

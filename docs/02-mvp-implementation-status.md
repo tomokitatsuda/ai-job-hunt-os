@@ -2,7 +2,7 @@
 
 ## このドキュメントの目的
 
-このドキュメントは、AI Job Hunt OS のモック MVP から DB 操作、Auth.js 基盤導入、v0.10.0 相当の初回オンボーディング、owner isolation E2E、GitHub Actions CI、demo data方針、production containerまで、現在どこまで実装されているかを整理するためのメモです。
+このドキュメントは、AI Job Hunt OS のモック MVP から DB 操作、Auth.js 基盤導入、v0.11.0 相当の初回オンボーディング、owner isolation E2E、GitHub Actions CI、production container、staging CDまで、現在どこまで実装されているかを整理するためのメモです。
 
 最初はモックデータを使って、企業一覧、企業詳細、企業に紐づくタスク、面接ログを画面で確認できる状態にしました。その後、Prisma 7 + PostgreSQL + Docker Compose を導入し、現在は Auth.js / GitHub OAuth の認証基盤を入れ、Company を中心に Task と InterviewLog を紐づけてログインユーザー単位で DB 操作できる状態まで進んでいます。
 
@@ -117,8 +117,8 @@ seed による `demo-user` は、ローカル確認用の開発fixtureとして�
 - React
 - TypeScript
 - Tailwind CSS
-- Auth.js / NextAuth (`next-auth@^5.0.0-beta.31`)
-- `@auth/prisma-adapter@^2.11.2`
+- Auth.js / NextAuth (`next-auth@^5.0.0-beta.32`)
+- `@auth/prisma-adapter@^2.11.3`
 - Prisma 7
 - PostgreSQL
 - Docker Compose
@@ -126,9 +126,12 @@ seed による `demo-user` は、ローカル確認用の開発fixtureとして�
 - `@prisma/adapter-pg`
 - Playwright
 - GitHub Actions
+- GitHub Container Registry
+- Render Web Service
+- Neon managed PostgreSQL
 - ESLint
 
-AI API と実デプロイ環境はまだ導入していません。provider共通のproduction container、migration image、health checkは準備済みです。テストは Playwright + Chromium / WebKit で認証境界、認証済み主要 CRUD、health checkをカバーし、GitHub Actionsでもdependency audit、PostgreSQL migration、lint、schema検証、build、container smoke testと合わせて実行します。
+AI APIはまだ導入していません。Render + Neonをstaging providerとして選定し、Blueprint、GHCR publish、migration、digest deploy、revision/readiness検証は準備済みです。外部consoleでの初回resource作成が残っています。テストは Playwright + Chromium / WebKit で認証境界、認証済み主要 CRUD、health checkをカバーし、GitHub Actionsでもdependency audit、PostgreSQL migration、lint、schema検証、build、container smoke testと合わせて実行します。
 
 ## 4. 初期モックデータ構成
 
@@ -235,6 +238,9 @@ AI API と実デプロイ環境はまだ導入していません。provider共�
 - standalone production imageをnon-root userで実行できる
 - release前にmigration imageを実行し、applicationとmigrationの責務を分離できる
 - livenessとDB readinessをcontainerおよびCIから確認できる
+- CI成功済みcommitからlinux/amd64のrunner／migration imageをGHCRへ並列発行できる
+- Neonへのmigration成功後だけRenderへ同じrunner digestを配備できる
+- livenessのrevisionとreadinessにより、対象commitとDB疎通をrelease後に確認できる
 
 Task は Company 詳細画面内で表示・作成・更新・削除でき、Task 一覧画面ではログインユーザーの全 Task の確認、完了状態の切り替え、Company 選択つき作成、紐づけ変更、編集・削除ができます。InterviewLog は、まず企業詳細画面内で表示・作成・更新・削除できる最小構成にしています。
 
@@ -245,7 +251,7 @@ Task は Company 詳細画面内で表示・作成・更新・削除でき、Tas
 - AI 機能
 - 検索・フィルター・ソート
 - InterviewLog 一覧画面
-- hosting providerの選定と実環境へのデプロイ
+- Render／Neon consoleでのstaging resource作成と実ログイン確認
 - GitHub OAuth の実ログインを含む外部サービス連携テスト
 
 この段階では、完成済みのアプリとしてではなく、モック MVP から DB 操作、Auth.js 基盤導入へ段階的に進めている途中として扱います。
@@ -281,7 +287,7 @@ Task 一覧画面から作成する一般 Task は `companyId: null`、Company �
 
 次に進む候補は以下です。
 
-- hosting providerを選びstagingへデプロイ
+- Render／Neonのstaging bootstrapを完了し、主要CRUDをsmoke test
 - production OAuth／domain／monitoringの設定
 - InterviewLog 一覧画面の検討
 - 検索・フィルター・ソート
@@ -302,6 +308,7 @@ Task 一覧画面から作成する一般 Task は `companyId: null`、Company �
 - Chromium / WebKit の両方を PostgreSQL service container つき GitHub Actions で実行できるようにした
 - Next.js standalone outputとmulti-stage buildで約98 MBのnon-root production imageを作った
 - migrationをapplication起動から分離し、health endpointと実container smoke testをCIへ追加した
+- Render + Neonを選定し、commit SHA tagとdigestでartifactを追跡するstaging CDを設計した
 - demo-userを開発fixtureに限定し、remote seed防止とowner isolationテストで境界を保証した
 - demo user 固定で DB 操作を先に検証した後、Auth.js session user ID ベースの owner scoping に切り替えた
 - seed の demo-user データは認証ユーザーとは別であり、ログイン直後に見えないのは正常な状態として整理した

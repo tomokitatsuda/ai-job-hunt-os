@@ -28,10 +28,15 @@ RUN DATABASE_URL="postgresql://build:build@127.0.0.1:5432/build" \
 FROM node:22-bookworm-slim AS runner
 WORKDIR /app
 
-ENV NODE_ENV=production \
+ARG APP_REVISION=unknown
+
+ENV APP_REVISION=${APP_REVISION} \
+    NODE_ENV=production \
     NEXT_TELEMETRY_DISABLED=1 \
     HOSTNAME=0.0.0.0 \
     PORT=3000
+
+LABEL org.opencontainers.image.revision=${APP_REVISION}
 
 RUN chown node:node /app
 COPY --from=builder --chown=node:node /app/.next/standalone ./

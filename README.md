@@ -12,7 +12,7 @@
 
 AI Job Hunt OS は、就職活動の応募状況、選考予定、タスク、面接ログを一元管理するための Web アプリです。
 
-現在は v0.10.0 相当として、初回オンボーディング、認証済み CRUD とowner isolationの自動テスト、PostgreSQLを含むGitHub Actions CI、demo dataの安全方針、platform共通のproduction containerまで導入済みです。
+現在は v0.11.0 相当として、初回オンボーディング、認証済み CRUD とowner isolationの自動テスト、PostgreSQLを含むGitHub Actions CI、production containerに加え、Render + Neonを使うstaging release pipelineまで導入済みです。
 
 ## 概要
 
@@ -58,6 +58,9 @@ AI Job Hunt OS では、就活に必要な情報を Company を中心に整理�
 - Next.js standalone outputによるproduction container
 - non-root実行、migration専用image、DB readinessを含むcontainer smoke test
 - liveness `/api/health/live` とreadiness `/api/health/ready`
+- Render Web Service + Neon managed PostgreSQLのstaging構成
+- GHCRへcommit SHA imageを発行し、migration後に同じdigestをRenderへ配備する手動CD
+- 配備commitをlivenessの`revision`で確認するrelease verification
 
 Task は Company 詳細画面内で作成・編集・削除でき、Task 一覧画面ではログインユーザーの全 Task を未完了 / 完了に分けて確認し、完了状態を切り替えられます。また、Task 一覧画面の作成フォームでは Company を任意選択でき、未選択なら一般 Task、選択済みなら Company 紐づき Task として保存します。Task 編集画面では title、memo、dueDate に加えて Company の紐づけ先を変更でき、Company との紐づけ解除も可能です。
 
@@ -105,7 +108,7 @@ Company の基本情報と、その Company に紐づく Task / InterviewLog を
 - AI 機能
 - InterviewLog 一覧画面
 - 検索・フィルター・ソート
-- hosting providerの選定と実環境へのデプロイ
+- 外部consoleでのstaging初回bootstrapと実ログイン確認
 - GitHub OAuth の実ログインを含む外部サービス連携テスト
 
 Auth.js / GitHub OAuth の基盤、`/login`、サインイン / サインアウト action、アプリ画面を対象にした Proxy、初回ユーザー向けスターターデータ作成フローは導入済みです。
@@ -185,6 +188,8 @@ npm run test:e2e:webkit
 
 `.github/workflows/ci.yml` は `main` への push と pull request で PostgreSQL 17 の service container を起動し、dependency audit、migration、lint、Prisma schema validation、production build、Docker image／container smoke test、Chromium / WebKit E2E を自動実行します。結果にかかわらず Playwright の HTML report を artifact として14日間保存します。
 
+`.github/workflows/deploy-staging.yml` は手動実行専用です。同じcommitのCI成功を確認してから、runner／migration imageをGHCRへcommit SHA付きで発行します。Neonへmigrationを適用できた場合だけ`staging` tagを進め、Renderにはrunnerのimmutable digestを指定します。詳細な初回設定とsecretの置き場所は [docs/deployment.md](docs/deployment.md) を参照してください。
+
 GitHub OAuth プロバイダーとの実ログイン完走はまだ含めていません。seedとE2EはデフォルトでlocalhostのDBだけを許可します。隔離済みのremote development/test DBを使う場合だけ、それぞれ `ALLOW_REMOTE_SEED=true`、`ALLOW_REMOTE_E2E_DATABASE=true` を明示してください。
 
 local開発は [docs/setup.md](docs/setup.md)、container配備、runtime secret、migration、health check、rollbackは [docs/deployment.md](docs/deployment.md) を参照してください。`.env.example` の `DATABASE_URL` はローカル開発用 Docker 環境のサンプルです。`AUTH_SECRET`、`AUTH_GITHUB_ID`、`AUTH_GITHUB_SECRET` はプレースホルダーのみを置いています。実際の `.env` / `.env.local`、本番 DB や個人用 DB の接続情報、OAuth secret、API キー、個人情報は commit しないでください。
@@ -197,10 +202,11 @@ AI 機能はまだ未実装です。将来的には、蓄積した Company / Tas
 
 ## 今後の予定
 
-1. hosting providerを選びstagingへデプロイ
-2. production OAuth／domain／monitoringの設定
-3. InterviewLog 一覧画面の検討
-4. 検索・フィルター・ソートの追加
-5. AI 機能の段階的な追加
+1. Render + Neonの外部consoleでstaging bootstrapと実ログインを完了
+2. stagingの主要CRUD smoke testとmonitoring設定
+3. production OAuth／domain／monitoringの設定
+4. InterviewLog 一覧画面の検討
+5. 検索・フィルター・ソートの追加
+6. AI 機能の段階的な追加
 
 詳細な設計方針は [docs/00-project-overview.md](docs/00-project-overview.md)、現在の実装状況は [docs/02-mvp-implementation-status.md](docs/02-mvp-implementation-status.md)、認証後の確認項目は [docs/auth-verification.md](docs/auth-verification.md)、demo dataの判断は [docs/03-demo-data-policy.md](docs/03-demo-data-policy.md) にまとめています。
